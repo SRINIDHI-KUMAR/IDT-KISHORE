@@ -9,6 +9,8 @@ import {
   norm, toNum, txt, inIN, toLacs, toTons, pct,
   normDepotName, normFrt, normPlan, normWeek
 } from './utils/formatters';
+import icebergImg from './assets/iceberg.png';
+import southIndiaMapImg from './assets/south_india_map.png';
 
 const VIBRANT_PALETTES = [
   'linear-gradient(180deg, #6C2E7B, #4A1A56)', // Orchid Dream
@@ -222,6 +224,8 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [filters, setFilters] = useState({ week: '', month: '', frt: '', plan: '' });
   const [donutHover, setDonutHover] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFilename, setUploadFilename] = useState('');
 
   // Theme Sync
   useEffect(() => {
@@ -399,6 +403,8 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
 
+    setIsUploading(true);
+    setUploadFilename(file.name);
     setFileInfo(`Uploading & parsing ${file.name}...`);
 
     const reader = new FileReader();
@@ -460,6 +466,7 @@ export default function App() {
       } catch (parseErr) {
         alert('Error parsing Excel: ' + parseErr.message);
       } finally {
+        setIsUploading(false);
         if (e.target) e.target.value = '';
       }
     };
@@ -1048,7 +1055,7 @@ export default function App() {
 
                           {/* AUTHENTIC SOUTH INDIA MAP (CENTERED IN STAGE WITH MARGINS FOR CARDS) */}
                           <g className="map-states-layer">
-                            <image href="/south_india_map.png" xlinkHref="/south_india_map.png" x="200" y="10" width="800" height="940" preserveAspectRatio="xMidYMid meet"/>
+                            <image href={southIndiaMapImg} xlinkHref={southIndiaMapImg} x="200" y="10" width="800" height="940" preserveAspectRatio="xMidYMid meet"/>
                           </g>
 
                           {/* Central Bangalore Hub Radar Waves */}
@@ -1381,7 +1388,7 @@ export default function App() {
                       {/* FLOATING REALISTIC ICEBERG (Image + Planned/Unplanned Cards) */}
                       <g className="ice-float-hero">
                         <g clipPath="url(#iceLeftStageClip)" mask="url(#icebergEdgeFadeMask)">
-                          <image href="/iceberg.png" xlinkHref="/iceberg.png" x="0" y="0" width="345" height="500" preserveAspectRatio="none"/>
+                          <image href={icebergImg} xlinkHref={icebergImg} x="0" y="0" width="345" height="500" preserveAspectRatio="none"/>
                           {/* Rich Underwater Ocean Tint Matching VS Chart Sea Color Perfectly */}
                           <rect x="0" y="240" width="345" height="260" fill="url(#oceanDeepGrad)" opacity="0.85" style={{ mixBlendMode: 'color' }}/>
                           <rect x="0" y="240" width="345" height="260" fill="url(#oceanDeepGrad)" opacity="0.55" style={{ mixBlendMode: 'overlay' }}/>
@@ -1746,6 +1753,23 @@ export default function App() {
         confirmText="Yes, Clear All"
         cancelText="Cancel"
       />
+
+      {/* Uploading & Parsing Loading Modal Overlay */}
+      {isUploading && (
+        <div className="modal-bg" style={{ zIndex: 999999, backdropFilter: 'blur(6px)', background: 'rgba(15, 23, 42, 0.72)' }}>
+          <div className="empty-modal" style={{ textAlign: 'center', padding: '34px 28px', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', borderRadius: '18px', background: 'var(--card)', boxShadow: '0 25px 60px rgba(0,0,0,0.45)', border: '1.5px solid var(--line)' }}>
+            <div style={{ position: 'relative', width: '68px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '4px solid rgba(108, 46, 123, 0.15)', borderTopColor: 'var(--brand)', animation: 'spin 0.85s linear infinite' }} />
+              <span style={{ position: 'absolute', fontSize: '26px' }}>📊</span>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ink)', marginBottom: '6px' }}>Uploading &amp; Parsing Excel</h3>
+              <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--brand)', wordBreak: 'break-all', margin: '4px 0 10px' }}>{uploadFilename}</p>
+              <p style={{ fontSize: '12px', color: 'var(--ink-sub)', margin: 0, lineHeight: 1.45 }}>Scanning worksheets, calculating freight metrics, and syncing with SQLite DB...</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Instant 0ms Zero-Delay Floating HTML Tooltip */}
       <InstantTooltip />

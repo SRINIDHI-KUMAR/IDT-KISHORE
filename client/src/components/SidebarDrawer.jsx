@@ -78,13 +78,6 @@ export default function SidebarDrawer({
             </button>
           </div>
 
-          {/* Active Loaded File Card */}
-          <div className="sidebar-section-title">Currently Loaded</div>
-          <div className="active-file-card" id="active-file-card">
-            <div className="file-name" id="sidebar-active-filename">{activeFilename}</div>
-            <div className="file-meta" id="sidebar-active-meta">{activeMeta}</div>
-          </div>
-
           {/* Upload History Section */}
           <div className="sidebar-history-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
