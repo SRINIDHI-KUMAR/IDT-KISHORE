@@ -108,69 +108,69 @@ const DEPOT_STATIONS = [
     defaultDepot: 'bangalore',
     color: '#6C2E7B',
     isHub: true,
-    pinX: 430, pinY: 595,
-    lineD: 'M 430 595 L 340 520 L 265 480',
-    cardX: 15, cardY: 420, w: 250, h: 120
+    pinX: 415, pinY: 565,
+    lineD: 'M 415 565 L 340 505 L 282 476',
+    cardX: 12, cardY: 415, w: 270, h: 122
   },
   {
     slotId: 'north',
     defaultDepot: 'hyderabad',
     color: '#1D4ED8',
-    pinX: 600, pinY: 230,
-    lineD: 'M 600 230 L 780 200 L 940 189',
-    cardX: 940, cardY: 130, w: 245, h: 118
+    pinX: 575, pinY: 195,
+    lineD: 'M 575 195 L 750 160 L 918 151',
+    cardX: 918, cardY: 90, w: 270, h: 122
   },
   {
     slotId: 'northwest',
     defaultDepot: 'hubli',
     aliases: ['hubli', 'hubballi'],
     color: '#0F766E',
-    pinX: 320, pinY: 330,
-    lineD: 'M 320 330 L 285 240 L 260 189',
-    cardX: 15, cardY: 130, w: 245, h: 118
+    pinX: 305, pinY: 315,
+    lineD: 'M 305 315 L 282 220 L 282 151',
+    cardX: 12, cardY: 90, w: 270, h: 122
   },
   {
     slotId: 'east',
     defaultDepot: 'vijayawada',
     color: '#C2410C',
-    pinX: 625, pinY: 375,
-    lineD: 'M 625 375 L 790 430 L 940 479',
-    cardX: 940, cardY: 420, w: 245, h: 118
+    pinX: 645, pinY: 320,
+    lineD: 'M 645 320 L 780 400 L 918 476',
+    cardX: 918, cardY: 415, w: 270, h: 122
   },
   {
     slotId: 'southeast',
     defaultDepot: 'chennai',
     color: '#BE123C',
-    pinX: 635, pinY: 565,
-    lineD: 'M 635 565 L 790 670 L 940 769',
-    cardX: 940, cardY: 710, w: 245, h: 118
+    pinX: 664, pinY: 545,
+    lineD: 'M 664 545 L 785 670 L 918 801',
+    cardX: 918, cardY: 740, w: 270, h: 122
   },
   {
     slotId: 'southwest',
     defaultDepot: 'cochin',
     aliases: ['cochin', 'kochi'],
     color: '#0369A1',
-    pinX: 350, pinY: 720,
-    lineD: 'M 350 720 L 295 750 L 260 769',
-    cardX: 15, cardY: 710, w: 245, h: 118
+    pinX: 360, pinY: 755,
+    lineD: 'M 360 755 L 282 801',
+    cardX: 12, cardY: 740, w: 270, h: 122
   },
   {
     slotId: 'south',
     defaultDepot: 'coimbatore',
     color: '#B45309',
-    pinX: 440, pinY: 690,
-    lineD: 'M 440 690 L 440 825',
-    cardX: 400, cardY: 825, w: 250, h: 118
+    pinX: 435, pinY: 720,
+    lineD: 'M 435 720 L 435 780 L 465 850',
+    cardX: 465, cardY: 825, w: 270, h: 122
   }
 ];
 
 const LOGISTICS_ROUTES = [
-  { from: 'bangalore', to: 'hyderabad', d: 'M 430 595 Q 520 400, 600 230' },
-  { from: 'bangalore', to: 'hubli', d: 'M 430 595 Q 360 450, 320 330' },
-  { from: 'bangalore', to: 'vijayawada', d: 'M 430 595 Q 540 470, 625 375' },
-  { from: 'bangalore', to: 'chennai', d: 'M 430 595 Q 535 590, 635 565' },
-  { from: 'bangalore', to: 'cochin', d: 'M 430 595 Q 380 660, 350 720' },
-  { from: 'bangalore', to: 'coimbatore', d: 'M 430 595 Q 430 645, 440 690' }
+  { from: 'bangalore', to: 'hyderabad', d: 'M 415 565 Q 500 370, 575 195' },
+  { from: 'bangalore', to: 'hubli', d: 'M 415 565 Q 340 440, 305 315' },
+  { from: 'bangalore', to: 'vijayawada', d: 'M 415 565 Q 540 430, 645 320' },
+  { from: 'bangalore', to: 'chennai', d: 'M 415 565 Q 540 560, 664 545' },
+  { from: 'bangalore', to: 'cochin', d: 'M 415 565 Q 370 670, 360 755' },
+  { from: 'bangalore', to: 'coimbatore', d: 'M 415 565 Q 410 650, 435 720' }
 ];
 
 import { sqliteDB } from './db/sqlite';
@@ -181,12 +181,12 @@ const MAP_FIELDS = [
   { key: 'cse', label: 'CSE (quantity)', aliases: ['cse'] },
   { key: 'weight', label: 'Weight', aliases: ['weight'] },
   { key: 'frtCategory', label: 'FRT Category', aliases: ['frt category'] },
-  { key: 'frtCost', label: 'FRT Cost', aliases: ['frt cost'] },
+  { key: 'frtCost', label: 'FRT Cost per CSE', aliases: ['frt cost per cse', 'frt cost / cse', 'frt cost/cse', 'cost per cse', 'sum of frt cost per cse', 'frt cost', 'freight cost'] },
   { key: 'category', label: 'Category', aliases: ['category'] },
   { key: 'iopCategory', label: 'Brand / Iop Cat.', aliases: ['iop category'] },
-  { key: 'toDepot', label: 'To / Destination Depot', aliases: ['to " plant name', 'to plant name', 'to depot', 'destination depot', 'to depot name', 'destination', 'to'] },
-  { key: 'fromDepot', label: 'From / Origin Depot', aliases: ['from', 'from depot', 'source depot', 'from depot name', 'source'] },
-  { key: 'route', label: 'Route / Depot', aliases: ['route', 'concat route type', 'concat route'] },
+  { key: 'toDepot', label: 'To / Destination DC', aliases: ['to " plant name', 'to plant name', 'to depot', 'destination depot', 'to depot name', 'destination', 'to', 'to dc', 'destination dc', 'to dc name'] },
+  { key: 'fromDepot', label: 'From / Origin DC', aliases: ['from', 'from depot', 'source depot', 'from depot name', 'source', 'from dc', 'source dc', 'from dc name'] },
+  { key: 'route', label: 'Route / DC', aliases: ['route', 'concat route type', 'concat route', 'route / dc', 'dc'] },
   { key: 'transport', label: 'Transport Name', aliases: ['transport name'] },
   { key: 'lr', label: 'LR / Trip no', aliases: ['lr'] },
   { key: 'remarks', label: 'Movement Remarks', aliases: ['movement remarks', 'remarks'] },
@@ -219,6 +219,7 @@ export default function App() {
   const [rows, setRows] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [columnMap, setColumnMap] = useState({});
+  const [currentAOA, setCurrentAOA] = useState([]);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [history, setHistory] = useState([]);
@@ -250,9 +251,9 @@ export default function App() {
     });
   };
 
-  const parseAOA = (aoa) => {
+  const parseAOA = (aoa, customMap = null) => {
     let headerRowIdx = 0;
-    const need = ['month', 'cse', 'weight', 'frt category', 'transport name', 'category', 'week type'];
+    const need = ['month', 'cse', 'weight', 'frt category', 'transport name', 'category', 'week type', 'frt cost per cse', 'frt cost'];
     let bestScore = 0;
     for (let i = 0; i < Math.min(aoa.length, 15); i++) {
       const set = new Set((aoa[i] || []).map(norm));
@@ -268,24 +269,28 @@ export default function App() {
     const hdrs = hRow.map((h, i) => ({ idx: i, label: txt(h) || `Column ${i + 1}` }));
     const data = aoa.slice(headerRowIdx + 1);
 
-    const map = {};
-    const normHdrs = hdrs.map(h => norm(h.label));
-    MAP_FIELDS.forEach(f => {
-      let matchIdx = -1;
-      for (const alias of f.aliases) {
-        const idx = normHdrs.indexOf(alias);
-        if (idx !== -1) { matchIdx = idx; break; }
-      }
-      if (matchIdx === -1) {
+    let map = {};
+    if (customMap && Object.keys(customMap).length > 0) {
+      map = { ...customMap };
+    } else {
+      const normHdrs = hdrs.map(h => norm(h.label));
+      MAP_FIELDS.forEach(f => {
+        let matchIdx = -1;
         for (const alias of f.aliases) {
-          const idx = normHdrs.findIndex(h => h.includes(alias));
+          const idx = normHdrs.indexOf(alias);
           if (idx !== -1) { matchIdx = idx; break; }
         }
-      }
-      if (matchIdx !== -1) {
-        map[f.key] = matchIdx;
-      }
-    });
+        if (matchIdx === -1) {
+          for (const alias of f.aliases) {
+            const idx = normHdrs.findIndex(h => h.includes(alias));
+            if (idx !== -1) { matchIdx = idx; break; }
+          }
+        }
+        if (matchIdx !== -1) {
+          map[f.key] = matchIdx;
+        }
+      });
+    }
 
     const val = (r, key) => (map[key] != null && r ? r[map[key]] : undefined);
     const parsedRows = [];
@@ -337,6 +342,7 @@ export default function App() {
     setRows([]);
     setHeaders([]);
     setColumnMap({});
+    setCurrentAOA([]);
     setActiveFilename('No file loaded');
     setActiveMeta('Status: Idle • No file loaded');
     setFileInfo('No file loaded (0 records)');
@@ -365,6 +371,7 @@ export default function App() {
           setHeaders(parsed.headers);
           setRows(parsed.rows);
           setColumnMap(parsed.map);
+          setCurrentAOA(record.aoa);
           setActiveFilename(record.name);
           setActiveMeta(`Loaded from SQLite DB • ${record.timestamp}`);
           setFileInfo(`${record.name} (${parsed.rows.length} records)`);
@@ -377,6 +384,7 @@ export default function App() {
           setHeaders(parsed.headers);
           setRows(parsed.rows);
           setColumnMap(parsed.map);
+          setCurrentAOA(EMBEDDED_MASTER_DATA);
           const fname = 'IDT Provision & Paid Tracker-South Region Master File.xlsx';
           setActiveFilename(fname);
           setActiveMeta('Status: Active • Embedded Dataset');
@@ -415,7 +423,7 @@ export default function App() {
         const wb = XLSX.read(data, { type: 'array' });
 
         // Intelligently scan all sheets to find the IDT master transaction sheet
-        const need = ['month', 'cse', 'weight', 'frt category', 'transport name', 'category', 'week type', 'frt cost'];
+        const need = ['month', 'cse', 'weight', 'frt category', 'transport name', 'category', 'week type', 'frt cost per cse', 'frt cost'];
         let selectedSheet = wb.SheetNames[0];
         let bestScore = -1;
         let bestAOA = [];
@@ -451,6 +459,7 @@ export default function App() {
         setHeaders(parsed.headers);
         setRows(parsed.rows);
         setColumnMap(parsed.map);
+        setCurrentAOA(aoa);
         setActiveFilename(file.name);
         setActiveMeta(`Loaded Sheet "${selectedSheet}" • Active`);
         setFileInfo(`${file.name} [${selectedSheet}] (${parsed.rows.length} records)`);
@@ -480,6 +489,7 @@ export default function App() {
       setHeaders(parsed.headers);
       setRows(parsed.rows);
       setColumnMap(parsed.map);
+      setCurrentAOA(record.aoa);
       setActiveFilename(record.name);
       setActiveMeta(`Loaded from SQLite DB • ${record.timestamp}`);
       setFileInfo(`${record.name} (${parsed.rows.length} records)`);
@@ -544,6 +554,25 @@ export default function App() {
   const mktWeeks = { W1: 0, W2: 0, W3: 0, W4: 0, W5: 0 };
   dedicatedRows.forEach(r => { if (dedWeeks[r.weekType] !== undefined) dedWeeks[r.weekType] += (r.frtCost || 0); });
   marketRows.forEach(r => { if (mktWeeks[r.weekType] !== undefined) mktWeeks[r.weekType] += (r.frtCost || 0); });
+
+  // Previous months cost breakdown in Lacs (e.g. Aug, etc.)
+  const monthCostMap = new Map();
+  rows.forEach(r => {
+    const m = (r.month || '').trim();
+    if (m && m !== '(blank)' && m !== '#N/A' && m !== 'N/A') {
+      monthCostMap.set(m, (monthCostMap.get(m) || 0) + (r.frtCost || 0));
+    }
+  });
+
+  let prevMonthsList = [];
+  if (monthCostMap.size > 0) {
+    prevMonthsList = Array.from(monthCostMap.entries()).slice(0, 3).map(([name, cost]) => ({
+      name,
+      cost
+    }));
+  } else {
+    prevMonthsList = [{ name: 'Aug', cost: totalCost }];
+  }
 
   // Slicer options
   const uniq = (arr) => [...new Set(arr.filter(Boolean))];
@@ -649,8 +678,8 @@ export default function App() {
   } else if (isAllBlankRem) {
     donutTotal = totalCost;
     donutItems = [
-      { name: 'Plant to Depot', v: donutTotal * 0.52, share: 0.52 },
-      { name: 'Depot to Depot', v: donutTotal * 0.33, share: 0.33 },
+      { name: 'Plant to DC', v: donutTotal * 0.52, share: 0.52 },
+      { name: 'DC to DC', v: donutTotal * 0.33, share: 0.33 },
       { name: 'Direct Customer', v: donutTotal * 0.15, share: 0.15 }
     ];
   } else {
@@ -766,16 +795,32 @@ export default function App() {
 
         {/* ROW 1: 3 KPI Cards */}
         <section className="kpis-row">
-          {/* Card 1: Total Cost */}
-          <div className="kpi-card">
+          {/* Card 1: Total Cost & Previous Months */}
+          <div className="kpi-card cost-kpi-card">
             <div className="kpi-head">
               <span className="kpi-label">Cost in Lacs</span>
+              <span className="kpi-badge-pill kpi-prev-mo-tag" title="Previous Month(s) Total Freight Spend">
+                {prevMonthsList.length > 1 ? 'Prev Months' : 'Prev Month'}
+              </span>
             </div>
-            <div className="kpi-big-cost" id="kpi-total-cost">
-              ₹ {toLacs(totalCost).replace(' L', '')} <small>Lakhs</small>
-            </div>
-            <div className="kpi-subtext" id="kpi-total-sub">
-              {inIN(totalCSE)} CSE &bull; {toTons(totalWeight)} weight
+            <div className="kpi-cost-content-wrap">
+              <div className="kpi-cost-left">
+                <div className="kpi-big-cost" id="kpi-total-cost">
+                  ₹ {toLacs(totalCost).replace(' L', '')} <small>Lakhs</small>
+                </div>
+                <div className="kpi-subtext" id="kpi-total-sub">
+                  {inIN(totalCSE)} CSE &bull; {toTons(totalWeight)} weight
+                </div>
+              </div>
+
+              <div className="kpi-prev-months-grid">
+                {prevMonthsList.map(pm => (
+                  <div key={pm.name} className="prev-month-pill" title={`${pm.name}: ₹ ${toLacs(pm.cost)}`}>
+                    <span className="pm-lbl">{pm.name}</span>
+                    <span className="pm-val">₹ {toLacs(pm.cost)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -897,7 +942,7 @@ export default function App() {
                         <div style={{ fontSize: '11.5px', color: 'var(--ink-sub)', padding: '14px', textAlign: 'center', width: '100%' }}>No data</div>
                       ) : (
                         validCategories.map((item, idx) => {
-                          const heightPct = Math.max(12, (item.v / maxCatVal) * 88).toFixed(1);
+                          const heightPct = Math.max(14, (item.v / maxCatVal) * 92).toFixed(1);
                           const displayVal = toLacs(item.v);
                           const bgGrad = VIBRANT_PALETTES[idx % VIBRANT_PALETTES.length];
                           return (
@@ -931,7 +976,7 @@ export default function App() {
                         <div style={{ fontSize: '11.5px', color: 'var(--ink-sub)', padding: '14px', textAlign: 'center', width: '100%' }}>No data</div>
                       ) : (
                         topBrands.map((item, idx) => {
-                          const heightPct = Math.max(12, (item.v / maxBrandVal) * 88).toFixed(1);
+                          const heightPct = Math.max(14, (item.v / maxBrandVal) * 92).toFixed(1);
                           const displayVal = toLacs(item.v);
                           const bgGrad = VIBRANT_PALETTES[idx % VIBRANT_PALETTES.length];
                           return (
@@ -978,7 +1023,7 @@ export default function App() {
                         const tot = weeklyTotals[w].tot;
                         const d = weeklyTotals[w].ded;
                         const m = weeklyTotals[w].mkt;
-                        const heightPct = tot > 0 ? Math.max(14, (tot / maxWeekTot) * 78).toFixed(1) : '0';
+                        const heightPct = tot > 0 ? Math.max(14, (tot / maxWeekTot) * 92).toFixed(1) : '0';
                         const dedPct = tot > 0 ? ((d / tot) * 100).toFixed(2) : '0.00';
                         const mktPct = tot > 0 ? ((m / tot) * 100).toFixed(2) : '0.00';
                         const displayVal = tot > 0 ? toLacs(tot) : '0.00 L';
@@ -995,7 +1040,7 @@ export default function App() {
                               {tot > 0 ? (
                                 <div className="v-col-bar-group" style={{ height: `${heightPct}%` }}>
                                   <div className="v-col-val">{displayVal}</div>
-                                  <div className="week-col-bar" style={{ width: '100%', height: '100%', borderRadius: '4px 4px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+                                  <div className="week-col-bar">
                                     <div className="segment dedicated" style={{ height: `${dedPct}%`, background: 'linear-gradient(180deg,#6C2E7B,#4A1A56)' }}>
                                       {d > 0 && parseFloat(dedPct) >= 12 && (
                                         <span className="seg-val" style={{ color: '#ffffff' }}>{dedVal}</span>
@@ -1021,10 +1066,10 @@ export default function App() {
                     </div>
                   </div>
 
-                    {/* Depot Map Locations View (Authentic South India Geographic Map) */}
+                    {/* DC Map Locations View (Authentic South India Geographic Map) */}
                     <div className="split-pane" style={{ position: 'relative', padding: 0, overflow: 'hidden' }}>
                       <div className="split-lbl" style={{ padding: '4px 6px 2px 6px', marginBottom: 0 }}>
-                        <span>DEPOT LOCATIONS MAP</span>
+                        <span>DC LOCATIONS MAP</span>
                         <span id="lbl-route-total">{toLacs(depotTotalFrt)}</span>
                       </div>
                       <div id="chart-depot-map">
@@ -1035,33 +1080,34 @@ export default function App() {
                               <stop offset="60%" stopColor="#A78BFA" stopOpacity="0.12"/>
                               <stop offset="100%" stopColor="#6C2E7B" stopOpacity="0"/>
                             </radialGradient>
-                            <filter id="cardShadow" x="-12%" y="-12%" width="124%" height="128%">
-                              <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#0D3B66" floodOpacity="0.18"/>
+                            <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="135%">
+                              <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#0D3B66" floodOpacity="0.22"/>
+                              <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0D3B66" floodOpacity="0.10"/>
                             </filter>
                           </defs>
 
                           {/* Water Body Geographic Labels */}
-                          <text x="130" y="470" className="map-water-label" textAnchor="middle">ARABIAN SEA</text>
-                          <text x="1070" y="470" className="map-water-label" textAnchor="middle">BAY OF BENGAL</text>
-                          <text x="600" y="945" className="map-water-label" textAnchor="middle">INDIAN OCEAN</text>
+                          <text x="145" y="350" className="map-water-label" textAnchor="middle">ARABIAN SEA</text>
+                          <text x="1055" y="350" className="map-water-label" textAnchor="middle">BAY OF BENGAL</text>
+                          <text x="290" y="935" className="map-water-label" textAnchor="middle">INDIAN OCEAN</text>
 
                           {/* Compass Rose / North Indicator */}
-                          <g transform="translate(245, 55)" opacity="0.65">
+                          <g transform="translate(230, 50)" opacity="0.65">
                             <circle cx="0" cy="0" r="16" fill="var(--card)" stroke="var(--line)" strokeWidth="1"/>
                             <path d="M 0 -13 L 4 0 L 0 -4 L -4 0 Z" fill="#6C2E7B"/>
                             <path d="M 0 13 L 4 0 L 0 4 L -4 0 Z" fill="#94A3B8"/>
                             <text x="0" y="-16" textAnchor="middle" fill="#6C2E7B" fontSize="9" fontWeight="900">N</text>
                           </g>
 
-                          {/* AUTHENTIC SOUTH INDIA MAP (CENTERED IN STAGE WITH MARGINS FOR CARDS) */}
+                          {/* AUTHENTIC ENLARGED SOUTH INDIA MAP (EXPANDED TO OCCUPY NEARBY SPACE) */}
                           <g className="map-states-layer">
-                            <image href={southIndiaMapImg} xlinkHref={southIndiaMapImg} x="200" y="10" width="800" height="940" preserveAspectRatio="xMidYMid meet"/>
+                            <image href={southIndiaMapImg} xlinkHref={southIndiaMapImg} x="100" y="0" width="1000" height="960" preserveAspectRatio="xMidYMid meet"/>
                           </g>
 
                           {/* Central Bangalore Hub Radar Waves */}
-                          <circle cx="430" cy="595" r="85" fill="url(#hubRadarGlow)"/>
-                          <circle cx="430" cy="595" r="50" fill="none" stroke="#6C2E7B" strokeWidth="1" strokeDasharray="3,4" opacity="0.35"/>
-                          <circle cx="430" cy="595" r="110" fill="none" stroke="#6C2E7B" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.18"/>
+                          <circle cx="415" cy="565" r="85" fill="url(#hubRadarGlow)"/>
+                          <circle cx="415" cy="565" r="50" fill="none" stroke="#6C2E7B" strokeWidth="1" strokeDasharray="3,4" opacity="0.35"/>
+                          <circle cx="415" cy="565" r="110" fill="none" stroke="#6C2E7B" strokeWidth="0.8" strokeDasharray="4,6" opacity="0.18"/>
 
                           {/* Curved Logistics Route Lines */}
                           <g className="map-routes-layer">
@@ -1073,10 +1119,11 @@ export default function App() {
                             ))}
                           </g>
 
-                          {/* Leader Lines and Map Pin Dots for Each Depot */}
+                          {/* Leader Lines and Map Pin Dots for Each DC */}
                           {assignedDepots.map(({ station, depot }) => {
                             const { pinX, pinY, lineD, color, slotId } = station;
                             if (depot.isIdle) return null;
+
                             return (
                               <g key={`pin-${slotId}`} className="depot-pin-group">
                                 {lineD && (
@@ -1088,7 +1135,7 @@ export default function App() {
                             );
                           })}
 
-                          {/* Depot Station Callout Cards (Positioned in Outer Corners/Margins - 0% Map Overlap) */}
+                          {/* DC Station Callout Cards (Positioned in Surrounding Outer Spaces) */}
                           {assignedDepots.map(({ station, depot }) => {
                             const { cardX, cardY, w, h, color, slotId, isHub } = station;
                             const isIdle = depot.isIdle;
@@ -1099,10 +1146,10 @@ export default function App() {
                               return (
                                 <g key={slotId} className="depot-station-node idle" filter="url(#cardShadow)">
                                   <rect x={cardX} y={cardY} width={w} height={h} rx="14" className="depot-station-card-bg" style={{ strokeDasharray: '4,4' }} />
-                                  <text x={cardX + w / 2} y={cardY + h / 2 - 5} textAnchor="middle" fill="var(--ink-sub)" fontSize="18" fontWeight="900">
-                                    📍 {station.defaultDepot.toUpperCase()}
+                                  <text x={cardX + w / 2} y={cardY + h / 2 - 5} textAnchor="middle" fill="var(--ink-sub)" fontSize="26" fontWeight="900">
+                                    📍 {station.defaultDepot.toUpperCase()} (DC)
                                   </text>
-                                  <text x={cardX + w / 2} y={cardY + h / 2 + 19} textAnchor="middle" fill="var(--ink-sub)" fontSize="14" opacity="0.75">
+                                  <text x={cardX + w / 2} y={cardY + h / 2 + 22} textAnchor="middle" fill="var(--ink-sub)" fontSize="15" opacity="0.75">
                                     (No Active Trips)
                                   </text>
                                 </g>
@@ -1114,7 +1161,7 @@ export default function App() {
                                 key={slotId}
                                 className="depot-station-node"
                                 filter="url(#cardShadow)"
-                                data-tip={`<b>📍 ${depot.name.toUpperCase()}</b><br/>Freight Cost: ₹ ${displayVal} (${sharePct})<br/>Quantity: ${inIN(depot.cse)} CSE &bull; ${toTons(depot.weight)}<br/>Total Trips: ${inIN(depot.tripsCount)} Trips`}
+                                data-tip={`<b>📍 ${depot.name.toUpperCase()} (DC)</b><br/>Freight Cost: ₹ ${displayVal} (${sharePct})<br/>Quantity: ${inIN(depot.cse)} CSE &bull; ${toTons(depot.weight)}<br/>Total Trips: ${inIN(depot.tripsCount)} Trips`}
                               >
                                 {/* Card Body */}
                                 <rect x={cardX} y={cardY} width={w} height={h} rx="14" className="depot-station-card-bg" />
@@ -1126,21 +1173,30 @@ export default function App() {
                                 />
 
                                 {/* Station Header: Pin Dot + Name */}
-                                <circle cx={cardX + 18} cy={cardY + 30} r="5.5" fill={color} />
-                                <text x={cardX + 30} y={cardY + 36} fill="var(--ink)" fontSize="21" fontWeight="900" letterSpacing="0.4">
+                                <circle cx={cardX + 20} cy={cardY + 36} r="6.5" fill={color} />
+                                <text 
+                                  x={cardX + 34} 
+                                  y={cardY + 44} 
+                                  fill="var(--ink)" 
+                                  fontSize="32" 
+                                  fontWeight="900" 
+                                  letterSpacing={depot.name.length >= 9 ? "-0.4px" : "0.2px"}
+                                  textLength={depot.name.length >= 9 ? 220 : undefined}
+                                  lengthAdjust="spacingAndGlyphs"
+                                >
                                   {depot.name.toUpperCase()}
-                                  {isHub && <tspan fill={color} fontSize="14" fontWeight="900"> (HUB)</tspan>}
-                                </text>
-
-                                {/* Share Badge */}
-                                <rect x={cardX + w - 78} y={cardY + 14} width="68" height="28" rx="6" className="depot-share-pill" />
-                                <text x={cardX + w - 44} y={cardY + 33} textAnchor="middle" fill={color} fontSize="15.5" fontWeight="900">
-                                  {sharePct}
+                                  {isHub && <tspan fill={color} fontSize="17" fontWeight="900"> (HUB DC)</tspan>}
                                 </text>
 
                                 {/* Freight Main Cost */}
-                                <text x={cardX + 18} y={cardY + 94} fill="var(--ink)" fontSize="40" fontWeight="900" style={{ letterSpacing: '-0.7px' }}>
+                                <text x={cardX + 18} y={cardY + 98} fill="var(--ink)" fontSize="34" fontWeight="900" style={{ letterSpacing: '-0.5px' }}>
                                   ₹ {displayVal}
+                                </text>
+
+                                {/* Share Badge */}
+                                <rect x={cardX + w - 74} y={cardY + 70} width="62" height="32" rx="8" className="depot-share-pill" />
+                                <text x={cardX + w - 43} y={cardY + 92} textAnchor="middle" fill={color} fontSize="16" fontWeight="900">
+                                  {sharePct}
                                 </text>
                               </g>
                             );
@@ -1171,88 +1227,204 @@ export default function App() {
                       <div style={{ fontSize: '11.5px', color: 'var(--ink-sub)', margin: 'auto', textAlign: 'center' }}>
                         No movement data
                       </div>
-                    ) : (
-                      <div className="donut-interactive-wrap">
-                        <div className="donut-stage">
-                          <svg className="donut-full-svg" viewBox="0 0 160 160">
+                    ) : (() => {
+                      const dRadius = 55;
+                      const dCircumference = 2 * Math.PI * dRadius;
+                      let acc = 0;
+                      const computedSlices = donutItems.map((item, idx) => {
+                        const color = PIE_COLORS[idx % PIE_COLORS.length];
+                        const itemShare = donutTotal ? (item.v / donutTotal) : 0;
+                        const strokeDash = `${(itemShare * dCircumference).toFixed(2)} ${(dCircumference - (itemShare * dCircumference)).toFixed(2)}`;
+                        const offset = acc;
+                        acc += (itemShare * dCircumference);
+                        return { item, idx, color, itemShare, strokeDash, offset };
+                      });
+
+                      return (
+                        <div className="donut-interactive-wrap">
+                          <div className="donut-stage">
+                            <svg className="donut-full-svg" viewBox="0 0 170 170">
+                              <defs>
+                                {/* 3D Multi-Layer Drop Shadow Filter */}
+                                <filter id="pie3dShadow" x="-30%" y="-30%" width="160%" height="170%">
+                                  <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#0D3B66" floodOpacity="0.28" />
+                                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.14" />
+                                </filter>
+
+                                {/* Soft Ground Shadow Blur */}
+                                <filter id="pieGroundBlur" x="-30%" y="-30%" width="160%" height="160%">
+                                  <feGaussianBlur stdDeviation="5" />
+                                </filter>
+
+                                {/* Center 3D Hub Shadow */}
+                                <filter id="centerHubShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                  <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#0D3B66" floodOpacity="0.20" />
+                                  <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.12" />
+                                </filter>
+
+                                {/* 3D Specular Highlight Overlay */}
+                                <linearGradient id="pieSpecularTop" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.40" />
+                                  <stop offset="35%" stopColor="#ffffff" stopOpacity="0.08" />
+                                  <stop offset="100%" stopColor="#000000" stopOpacity="0.25" />
+                                </linearGradient>
+
+                                {/* Per-slice 3D Shading Gradients */}
+                                <linearGradient id="pieGrad0" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#87389A" />
+                                  <stop offset="100%" stopColor="#4A1A56" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FF6F96" />
+                                  <stop offset="100%" stopColor="#C23360" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FFA77D" />
+                                  <stop offset="100%" stopColor="#E66533" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#38C7C6" />
+                                  <stop offset="100%" stopColor="#127574" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#1E5B94" />
+                                  <stop offset="100%" stopColor="#061F38" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#A69BF2" />
+                                  <stop offset="100%" stopColor="#6759B8" />
+                                </linearGradient>
+                                <linearGradient id="pieGrad6" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FFD980" />
+                                  <stop offset="100%" stopColor="#E5A524" />
+                                </linearGradient>
+                              </defs>
+
+                              {/* Layer 0: Ground Shadow under the 3D Pie */}
+                              <ellipse cx="85" cy="100" rx="66" ry="24" fill="rgba(13, 59, 102, 0.22)" filter="url(#pieGroundBlur)" />
+
+                              {/* Main 3D Pie Chart Group with Depth */}
+                              <g filter="url(#pie3dShadow)">
+                                {/* Layer 1: 3D Cylinder Bottom Extrusion Steps (dy: 7..1) */}
+                                {[7, 6, 5, 4, 3, 2, 1].map(dy => (
+                                  <g key={`depth-step-${dy}`}>
+                                    {computedSlices.map(s => (
+                                      <circle
+                                        key={`depth-${dy}-${s.item.name}-${s.idx}`}
+                                        cx="85"
+                                        cy={78 + dy}
+                                        r={dRadius}
+                                        fill="transparent"
+                                        stroke={s.color}
+                                        strokeWidth={28}
+                                        strokeDasharray={s.strokeDash}
+                                        strokeDashoffset={`-${s.offset.toFixed(2)}`}
+                                        style={{ filter: 'brightness(0.60) saturate(1.25)' }}
+                                      />
+                                    ))}
+                                  </g>
+                                ))}
+
+                                {/* Layer 2: 3D Top Face Slices */}
+                                {computedSlices.map(s => (
+                                  <circle
+                                    key={`top-${s.item.name}-${s.idx}`}
+                                    className="donut-segment"
+                                    cx="85"
+                                    cy="78"
+                                    r={dRadius}
+                                    fill="transparent"
+                                    stroke={`url(#pieGrad${s.idx % 7})`}
+                                    strokeWidth={28}
+                                    strokeDasharray={s.strokeDash}
+                                    strokeDashoffset={`-${s.offset.toFixed(2)}`}
+                                    onMouseEnter={() => setDonutHover({ ...s.item, color: s.color, share: s.itemShare })}
+                                    onMouseLeave={() => setDonutHover(null)}
+                                    data-tip={`<b>${s.item.name}</b><br/>Freight: ₹ ${toLacs(s.item.v)} (${pct(s.itemShare)})`}
+                                  />
+                                ))}
+
+                                {/* Layer 3: 3D Specular Highlight Ring */}
+                                <circle
+                                  cx="85"
+                                  cy="78"
+                                  r={dRadius}
+                                  fill="transparent"
+                                  stroke="url(#pieSpecularTop)"
+                                  strokeWidth={28}
+                                  pointerEvents="none"
+                                  style={{ mixBlendMode: 'overlay', opacity: 0.40 }}
+                                />
+                              </g>
+
+                              {/* Layer 4: Raised 3D Center Hub / Pill */}
+                              <g transform="rotate(90 85 78)">
+                                {/* Inner depth rim */}
+                                <circle cx="85" cy="81" r="42" fill="rgba(0, 0, 0, 0.16)" />
+
+                                {/* 3D Raised Center Card */}
+                                <circle
+                                  cx="85"
+                                  cy="78"
+                                  r="41"
+                                  fill="var(--card)"
+                                  stroke="var(--line)"
+                                  strokeWidth="1.4"
+                                  filter="url(#centerHubShadow)"
+                                  id="donut-center-svg-bg"
+                                />
+                                <text
+                                  x="85"
+                                  y="74"
+                                  textAnchor="middle"
+                                  fontSize="14.5"
+                                  fontWeight="900"
+                                  fill="var(--ink)"
+                                  id="donut-val-text"
+                                  fontFamily="system-ui, -apple-system, sans-serif"
+                                  style={{ fontVariantNumeric: 'tabular-nums', transition: 'all .15s' }}
+                                >
+                                  {donutHover ? toLacs(donutHover.v) : toLacs(donutTotal)}
+                                </text>
+                                <text
+                                  x="85"
+                                  y="91"
+                                  textAnchor="middle"
+                                  fontSize="7"
+                                  fontWeight="800"
+                                  fill={donutHover ? donutHover.color : 'var(--ink-sub)'}
+                                  id="donut-lbl-text"
+                                  fontFamily="system-ui, -apple-system, sans-serif"
+                                  letterSpacing="0.1"
+                                  style={{ transition: 'all .15s' }}
+                                >
+                                  {donutHover ? `${donutHover.name} (${pct(donutHover.share)})` : 'TOTAL FRT'}
+                                </text>
+                              </g>
+                            </svg>
+                          </div>
+                          <div className="donut-chips-bar">
                             {donutItems.map((item, idx) => {
                               const color = PIE_COLORS[idx % PIE_COLORS.length];
                               const itemShare = donutTotal ? (item.v / donutTotal) : 0;
-                              const strokeDash = `${(itemShare * donutCircumference).toFixed(2)} ${(donutCircumference - (itemShare * donutCircumference)).toFixed(2)}`;
-                              const currentOffset = donutAccumOffset;
-                              donutAccumOffset += (itemShare * donutCircumference);
-
                               return (
-                                <circle
+                                <div
                                   key={item.name + idx}
-                                  className="donut-segment"
-                                  cx="80"
-                                  cy="80"
-                                  r={donutRadius}
-                                  fill="transparent"
-                                  stroke={color}
-                                  strokeWidth={32}
-                                  strokeDasharray={strokeDash}
-                                  strokeDashoffset={`-${currentOffset.toFixed(2)}`}
+                                  className="donut-chip"
                                   onMouseEnter={() => setDonutHover({ ...item, color, share: itemShare })}
                                   onMouseLeave={() => setDonutHover(null)}
                                   data-tip={`<b>${item.name}</b><br/>Freight: ₹ ${toLacs(item.v)} (${pct(itemShare)})`}
-                                />
+                                >
+                                  <span className="donut-chip-dot" style={{ background: color }}></span>
+                                  <span className="donut-chip-txt">{item.name}</span>
+                                  <span className="donut-chip-val">{toLacs(item.v)}</span>
+                                </div>
                               );
                             })}
-                            <g transform="rotate(90 80 80)">
-                              <circle cx="80" cy="80" r="46" fill="var(--card)" stroke="var(--line)" strokeWidth="1.2" id="donut-center-svg-bg" />
-                              <text
-                                x="80"
-                                y="76"
-                                textAnchor="middle"
-                                fontSize="15"
-                                fontWeight="900"
-                                fill="var(--ink)"
-                                id="donut-val-text"
-                                fontFamily="system-ui, -apple-system, sans-serif"
-                                style={{ fontVariantNumeric: 'tabular-nums', transition: 'all .15s' }}
-                              >
-                                {donutHover ? toLacs(donutHover.v) : toLacs(donutTotal)}
-                              </text>
-                              <text
-                                x="80"
-                                y="93"
-                                textAnchor="middle"
-                                fontSize="7.5"
-                                fontWeight="800"
-                                fill={donutHover ? donutHover.color : 'var(--ink-sub)'}
-                                id="donut-lbl-text"
-                                fontFamily="system-ui, -apple-system, sans-serif"
-                                letterSpacing="0.1"
-                                style={{ transition: 'all .15s' }}
-                              >
-                                {donutHover ? `${donutHover.name} (${pct(donutHover.share)})` : 'TOTAL FRT'}
-                              </text>
-                            </g>
-                          </svg>
+                          </div>
                         </div>
-                        <div className="donut-chips-bar">
-                          {donutItems.map((item, idx) => {
-                            const color = PIE_COLORS[idx % PIE_COLORS.length];
-                            const itemShare = donutTotal ? (item.v / donutTotal) : 0;
-                            return (
-                              <div
-                                key={item.name + idx}
-                                className="donut-chip"
-                                onMouseEnter={() => setDonutHover({ ...item, color, share: itemShare })}
-                                onMouseLeave={() => setDonutHover(null)}
-                                data-tip={`<b>${item.name}</b><br/>Freight: ₹ ${toLacs(item.v)} (${pct(itemShare)})`}
-                              >
-                                <span className="donut-chip-dot" style={{ background: color }}></span>
-                                <span className="donut-chip-txt">{item.name}</span>
-                                <span className="donut-chip-val">{toLacs(item.v)}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1263,411 +1435,221 @@ export default function App() {
               <div className="q-body">
                 <div className="split-pane" style={{ height: '100%', padding: 0, position: 'relative', overflow: 'hidden' }}>
                   <div className="split-lbl" style={{ padding: '4px 6px 2px 6px', marginBottom: 0, zIndex: 10, position: 'relative', background: 'var(--card-sub)', borderBottom: '1px solid var(--line)' }}>
-                    <span style={{ fontWeight: 800 }}>ROUTE TYPE - CATEGORY (ICEBERG)</span>
+                    <span style={{ fontWeight: 800 }}>ROUTE TYPE - CATEGORY</span>
                     <span className="hdr-legend-group">
-                      <span className="hdr-leg-item" style={{ color: '#00897B', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#00897B' }}></span>▲ Planned (Above)</span>
-                      <span className="hdr-leg-item" style={{ color: '#E11D48', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#E11D48' }}></span>▼ Unplanned (Below)</span>
+                      <span className="hdr-leg-item" style={{ color: '#008779', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#008779' }}></span>▲ Planned (Above)</span>
+                      <span className="hdr-leg-item" style={{ color: '#0C2366', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#0C2366' }}></span>▼ Unplanned (Below)</span>
                     </span>
                     <span id="lbl-cat-week-total" style={{ fontWeight: 900, color: '#0F172A', fontSize: '13px' }}>{toLacs(iceTotalAll)}</span>
                   </div>
-                  <div className="iceberg-stage-container" id="chart-cat-week-list" style={{ background: 'linear-gradient(180deg, #E0F2FE 0%, #D2EEF9 48%, #0369A1 48.5%, #082F49 75%, #021526 100%)' }}>
+                  <div className="iceberg-stage-container" id="chart-cat-week-list">
                     {iceTotalAll === 0 ? (
                       <div style={{ fontSize: '11px', color: 'var(--ink-sub)', margin: 'auto', textAlign: 'center', zIndex: 2 }}>
                         No category freight data
                       </div>
                     ) : (
-                      <svg className="iceberg-stage-bg-svg" viewBox="0 0 1000 500" preserveAspectRatio="none">
-                      <defs>
-                        <filter id="iceCardShadow" x="-10%" y="-10%" width="125%" height="135%">
-                          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.16"/>
-                        </filter>
-                        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#E0F2FE" stopOpacity="1"/>
-                          <stop offset="100%" stopColor="#D2EEF9" stopOpacity="1"/>
-                        </linearGradient>
-                        <linearGradient id="oceanDeepGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0284C7" stopOpacity="0.35"/>
-                          <stop offset="35%" stopColor="#0369A1" stopOpacity="0.65"/>
-                          <stop offset="75%" stopColor="#082F49" stopOpacity="0.95"/>
-                          <stop offset="100%" stopColor="#021526" stopOpacity="1"/>
-                        </linearGradient>
-                        <linearGradient id="oceanMidWaveGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.55"/>
-                          <stop offset="40%" stopColor="#0284C7" stopOpacity="0.45"/>
-                          <stop offset="100%" stopColor="#0369A1" stopOpacity="0.7"/>
-                        </linearGradient>
-                        <linearGradient id="oceanForeWaveGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.45"/>
-                          <stop offset="50%" stopColor="#0284C7" stopOpacity="0.35"/>
-                          <stop offset="100%" stopColor="#082F49" stopOpacity="0.6"/>
-                        </linearGradient>
-                        <linearGradient id="waveFoamGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85"/>
-                          <stop offset="50%" stopColor="#74EBD5" stopOpacity="0.65"/>
-                          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.85"/>
-                        </linearGradient>
-                        <linearGradient id="sunbeam1" x1="0.5" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
-                          <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
-                        </linearGradient>
-                        <linearGradient id="sunbeam2" x1="0.5" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
-                          <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
-                        </linearGradient>
-                        <linearGradient id="iceTipFront" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95"/>
-                          <stop offset="60%" stopColor="#E0F2FE" stopOpacity="0.85"/>
-                          <stop offset="100%" stopColor="#7DD3FC" stopOpacity="0.75"/>
-                        </linearGradient>
-                        <linearGradient id="iceTipShadow" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#BAE6FD" stopOpacity="0.85"/>
-                          <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.65"/>
-                        </linearGradient>
-                        <linearGradient id="subIceMain" x1="0.5" y1="0" x2="0.5" y2="1">
-                          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.7"/>
-                          <stop offset="40%" stopColor="#0284C7" stopOpacity="0.6"/>
-                          <stop offset="100%" stopColor="#0369A1" stopOpacity="0.8"/>
-                        </linearGradient>
-                        <linearGradient id="subIceDark" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#075985" stopOpacity="0.8"/>
-                          <stop offset="100%" stopColor="#0C4A6E" stopOpacity="0.92"/>
-                        </linearGradient>
-                        <linearGradient id="subIceLight" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.8"/>
-                          <stop offset="100%" stopColor="#0284C7" stopOpacity="0.5"/>
-                        </linearGradient>
-                        <linearGradient id="barPlanGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00A896"/>
-                          <stop offset="100%" stopColor="#00897B"/>
-                        </linearGradient>
-                        <linearGradient id="barUnplanGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FB7185"/>
-                          <stop offset="100%" stopColor="#E11D48"/>
-                        </linearGradient>
-                        <linearGradient id="barPlanHGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#00A896"/>
-                          <stop offset="100%" stopColor="#00897B"/>
-                        </linearGradient>
-                        <linearGradient id="barUnplanHGrad" x1="1" y1="0" x2="0" y2="0">
-                          <stop offset="0%" stopColor="#FB7185"/>
-                          <stop offset="100%" stopColor="#E11D48"/>
-                        </linearGradient>
-                        <clipPath id="iceLeftStageClip">
-                          <rect x="0" y="0" width="345" height="500" rx="5"/>
-                        </clipPath>
-                        <mask id="icebergEdgeFadeMask">
-                          <linearGradient id="iceFadeGrad" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
-                            <stop offset="65%" stopColor="#FFFFFF" stopOpacity="1"/>
-                            <stop offset="96%" stopColor="#FFFFFF" stopOpacity="0"/>
-                          </linearGradient>
-                          <rect x="0" y="0" width="345" height="500" fill="url(#iceFadeGrad)"/>
-                        </mask>
-                      </defs>
+                      <>
+                        {/* LEFT COLUMN: REALISTIC FLOATING ICEBERG GRAPHIC */}
+                        <div className="iceberg-left-stage">
+                          <svg className="iceberg-left-svg" viewBox="0 0 380 500" preserveAspectRatio="none">
+                            <defs>
+                              <filter id="iceCardShadow" x="-15%" y="-15%" width="130%" height="140%">
+                                <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#0D3B66" floodOpacity="0.20"/>
+                                <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0D3B66" floodOpacity="0.10"/>
+                              </filter>
+                              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="1"/>
+                                <stop offset="100%" stopColor="#D2EEF9" stopOpacity="1"/>
+                              </linearGradient>
+                              <linearGradient id="oceanDeepGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#0284C7" stopOpacity="0.35"/>
+                                <stop offset="35%" stopColor="#0369A1" stopOpacity="0.65"/>
+                                <stop offset="75%" stopColor="#082F49" stopOpacity="0.95"/>
+                                <stop offset="100%" stopColor="#021526" stopOpacity="1"/>
+                              </linearGradient>
+                              <linearGradient id="oceanMidWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.55"/>
+                                <stop offset="40%" stopColor="#0284C7" stopOpacity="0.45"/>
+                                <stop offset="100%" stopColor="#0369A1" stopOpacity="0.7"/>
+                              </linearGradient>
+                              <linearGradient id="oceanForeWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.45"/>
+                                <stop offset="50%" stopColor="#0284C7" stopOpacity="0.35"/>
+                                <stop offset="100%" stopColor="#082F49" stopOpacity="0.6"/>
+                              </linearGradient>
+                              <linearGradient id="waveFoamGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85"/>
+                                <stop offset="50%" stopColor="#74EBD5" stopOpacity="0.65"/>
+                                <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.85"/>
+                              </linearGradient>
+                              <linearGradient id="sunbeam1" x1="0.5" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
+                                <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
+                              </linearGradient>
+                              <linearGradient id="sunbeam2" x1="0.5" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
+                                <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
+                              </linearGradient>
+                              <clipPath id="iceLeftStageClip">
+                                <rect x="0" y="0" width="380" height="500"/>
+                              </clipPath>
+                              <mask id="icebergEdgeFadeMask">
+                                <linearGradient id="iceFadeGrad" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
+                                  <stop offset="82%" stopColor="#FFFFFF" stopOpacity="1"/>
+                                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+                                </linearGradient>
+                                <rect x="0" y="0" width="380" height="500" fill="url(#iceFadeGrad)"/>
+                              </mask>
+                            </defs>
 
-                      {/* Sky Atmosphere */}
-                      <rect x="0" y="0" width="1000" height="240" fill="url(#skyGrad)"/>
-                      <rect x="0" y="240" width="1000" height="260" fill="url(#oceanDeepGrad)"/>
+                            {/* Sky Atmosphere */}
+                            <rect x="0" y="0" width="380" height="240" fill="url(#skyGrad)"/>
+                            <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)"/>
 
-                      {/* Underwater Light Refraction Caustics & Sunbeams */}
-                      <g className="sea-caustics">
-                        <polygon points="175,240 40,500 130,500" fill="url(#sunbeam1)"/>
-                        <polygon points="175,240 220,500 310,500" fill="url(#sunbeam2)"/>
-                        <polygon points="175,240 120,500 190,500" fill="url(#sunbeam1)" opacity="0.5"/>
-                      </g>
-
-                      {/* Layer 1: Background Deep Moving Wave */}
-                      <g className="sea-waves-container">
-                        <path
-                          className="sea-wave-back"
-                          d="M -200 240 C -120 240, -40 248, 40 240 C 120 240, 200 248, 280 240 C 360 240, 440 248, 520 240 C 600 240, 680 248, 760 240 C 840 240, 920 248, 1000 240 C 1080 240, 1160 248, 1240 240 L 1240 500 L -200 500 Z"
-                          fill="url(#oceanDeepGrad)"
-                        />
-                      </g>
-
-                      {/* FLOATING REALISTIC ICEBERG (Image + Planned/Unplanned Cards) */}
-                      <g className="ice-float-hero">
-                        <g clipPath="url(#iceLeftStageClip)" mask="url(#icebergEdgeFadeMask)">
-                          <image href={icebergImg} xlinkHref={icebergImg} x="0" y="0" width="345" height="500" preserveAspectRatio="none"/>
-                          {/* Rich Underwater Ocean Tint Matching VS Chart Sea Color Perfectly */}
-                          <rect x="0" y="240" width="345" height="260" fill="url(#oceanDeepGrad)" opacity="0.85" style={{ mixBlendMode: 'color' }}/>
-                          <rect x="0" y="240" width="345" height="260" fill="url(#oceanDeepGrad)" opacity="0.55" style={{ mixBlendMode: 'overlay' }}/>
-                          <rect x="0" y="240" width="345" height="260" fill="#0284C7" opacity="0.35" style={{ mixBlendMode: 'screen' }}/>
-                          <rect x="0" y="240" width="345" height="260" fill="url(#oceanMidWaveGrad)" opacity="0.45" style={{ mixBlendMode: 'soft-light' }}/>
-                        </g>
-
-                        {/* ABOVE WATER ICEBERG PEAK (Planned Values) - Positioned at Top Left Corner */}
-                        <g 
-                          className="ice-hero-group planned" 
-                          data-tip={`<b>▲ ROUTE TYPE: PLANNED (PEAK OF ICEBERG)</b><br/>Planned Total: ₹ ${toLacs(icePlannedCost)} (${icePlanPct}%)\nVolume: ${inIN(icePlannedCSE)} CSE &bull; ${toTons(icePlannedWt)}<br/>Trips: ${icePlannedTrips} Trips`}
-                        >
-                          <rect x="0" y="0" width="335" height="240" fill="transparent"/>
-                          <rect className="ice-hero-card" x="12" y="14" width="146" height="58" rx="8" ry="8"/>
-                          <text x="85" y="32" textAnchor="middle" fill="#00897B" fontSize="10.5" fontWeight="900" letterSpacing="0.5">▲ PLANNED</text>
-                          <text className="ice-hero-main-val" x="85" y="51" textAnchor="middle" fontSize="17" fontWeight="900">₹ {toLacs(icePlannedCost)}</text>
-                          <text x="85" y="63" textAnchor="middle" fill="#00897B" fontSize="9" fontWeight="800">{icePlanPct}% OF FREIGHT</text>
-                        </g>
-                      </g>
-
-                      {/* Layer 2: Mid-ground Translucent Rolling Waves */}
-                      <g className="sea-waves-container">
-                        <path
-                          className="sea-wave-mid"
-                          d="M -200 240 C -140 246, -60 240, 20 240 C 100 246, 180 240, 260 240 C 340 246, 420 240, 500 240 C 580 246, 660 240, 740 240 C 820 246, 900 240, 980 240 C 1060 246, 1140 240, 1220 240 L 1220 500 L -200 500 Z"
-                          fill="url(#oceanMidWaveGrad)"
-                        />
-                      </g>
-
-                      {/* Layer 3: Foreground Waving Ocean Foam & Crest */}
-                      <g className="sea-waves-container">
-                        <path
-                          className="sea-wave-fore"
-                          d="M -200 242 C -110 240, -20 250, 70 242 C 160 240, 250 250, 340 242 C 430 240, 520 250, 610 242 C 700 240, 790 250, 880 242 C 970 240, 1060 250, 1150 242 C 1240 240, 1330 250, 1420 242 L 1420 500 L -200 500 Z"
-                          fill="url(#oceanForeWaveGrad)"
-                        />
-                        {/* Dynamic Shimmering Wave Surface Line */}
-                        <path
-                          className="sea-wave-surface-line"
-                          d="M -200 240 C -110 240, -20 245, 70 240 C 160 240, 250 245, 340 240 C 430 240, 520 245, 610 240 C 700 240, 790 245, 880 240 C 970 240, 1060 245, 1150 240 C 1240 240, 1330 245, 1420 240"
-                          fill="none"
-                          stroke="url(#waveFoamGrad)"
-                          strokeWidth="2.8"
-                          strokeLinecap="round"
-                        />
-                      </g>
-
-                      {/* FOREGROUND UNPLANNED CALLOUT CARD (Rendered Above Ocean Waves for 100% Crisp Visibility) - Positioned at Bottom Right Corner */}
-                      <g className="ice-float-hero">
-                        <g 
-                          className="ice-hero-group unplanned" 
-                          data-tip={`<b>▼ ROUTE TYPE: UNPLANNED (SUBMERGED ICEBERG)</b><br/>Unplanned Total: ₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
-                        >
-                          <rect x="0" y="240" width="335" height="260" fill="transparent"/>
-                          <rect className="ice-hero-card" x="177" y="426" width="146" height="58" rx="8" ry="8"/>
-                          <text x="250" y="444" textAnchor="middle" fill="#E11D48" fontSize="10.5" fontWeight="900" letterSpacing="0.5">▼ UNPLANNED</text>
-                          <text className="ice-hero-main-val" x="250" y="463" textAnchor="middle" fontSize="17" fontWeight="900">₹ {toLacs(iceUnplannedCost)}</text>
-                          <text x="250" y="475" textAnchor="middle" fill="#E11D48" fontSize="9" fontWeight="800">{iceUnplanPct}% OF FREIGHT</text>
-                        </g>
-                      </g>
-
-                      {/* Stage Separator between Iceberg and Side Comparison */}
-                      <line x1="335" y1="20" x2="335" y2="480" stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="4,4"/>
-
-                      {/* SIDE COMPARISON HEADER: Unplanned (Left) VS Planned (Right) */}
-                      <g className="ice-comparison-hdr">
-                        {/* UNPLANNED HEADER (LEFT) */}
-                        <g 
-                          className="ice-hero-group unplanned"
-                          data-tip={`<b>▼ TOTAL UNPLANNED FREIGHT</b><br/>₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
-                        >
-                          <rect x="360" y="16" width="248" height="44" rx="10" fill="#FFFFFF" stroke="#E11D48" strokeWidth="1.8" filter="url(#iceCardShadow)"/>
-                          <circle cx="383" cy="38" r="6" fill="#E11D48"/>
-                          <text x="398" y="43" fill="#E11D48" fontSize="12.5" fontWeight="900" letterSpacing="0.8">▼ UNPLANNED</text>
-                          <text x="593" y="43.5" textAnchor="end" fill="#E11D48" fontSize="15" fontWeight="900">₹ {toLacs(iceUnplannedCost)}</text>
-                        </g>
-
-                        {/* VS BADGE (CENTER) */}
-                        <circle cx="665" cy="38" r="17" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.2" filter="url(#iceCardShadow)"/>
-                        <text x="665" y="43" textAnchor="middle" fill="#1E293B" fontSize="12" fontWeight="900" letterSpacing="0.5">VS</text>
-
-                        {/* PLANNED HEADER (RIGHT) */}
-                        <g 
-                          className="ice-hero-group planned"
-                          data-tip={`<b>▲ TOTAL PLANNED FREIGHT</b><br/>₹ ${toLacs(icePlannedCost)} (${icePlanPct}%)\nVolume: ${inIN(icePlannedCSE)} CSE &bull; ${toTons(icePlannedWt)}<br/>Trips: ${icePlannedTrips} Trips`}
-                        >
-                          <rect x="722" y="16" width="248" height="44" rx="10" fill="#FFFFFF" stroke="#00897B" strokeWidth="1.8" filter="url(#iceCardShadow)"/>
-                          <circle cx="745" cy="38" r="6" fill="#00897B"/>
-                          <text x="760" y="43" fill="#00897B" fontSize="12.5" fontWeight="900" letterSpacing="0.8">▲ PLANNED</text>
-                          <text x="955" y="43.5" textAnchor="end" fill="#00897B" fontSize="15" fontWeight="900">₹ {toLacs(icePlannedCost)}</text>
-                        </g>
-                      </g>
-
-                      {/* Vertical Central Dotted Spine Line */}
-                      <line x1="665" y1="62" x2="665" y2="488" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeDasharray="3,3"/>
-
-                      {/* PRODUCT / CATEGORY EXACT COMPARISON CHART (Larger Bars, Bigger Fonts, Full Vertical Distribution) */}
-                      {(() => {
-                        const CX = 665;
-                        const pillW = 156;
-                        const pillH = 48;
-                        const barH = 46;
-                        const badgeW = 100;
-                        const badgeH = 42;
-                        const centerLeftX = CX - pillW / 2; // 587
-                        const centerRightX = CX + pillW / 2; // 743
-                        const MAX_BAR_W = 205;
-                        const numCats = iceCats.length || 1;
-                        const startY = 95;
-                        const rowStep = 73;
-
-                        return iceCats.map((cat, idx) => {
-                          const rowY = startY + idx * rowStep;
-                          const pillY = rowY - pillH / 2;
-                          const pillX = centerLeftX;
-
-                          const planRatio = cat.totalCost > 0 ? ((cat.plannedCost / cat.totalCost) * 100).toFixed(1) : '0.0';
-                          const unplanRatio = cat.totalCost > 0 ? ((cat.unplannedCost / cat.totalCost) * 100).toFixed(1) : '0.0';
-
-                          const unplanW = cat.unplannedCost > 0 ? Math.max(18, Math.round((cat.unplannedCost / maxIceSideCost) * MAX_BAR_W)) : 0;
-                          const planW = cat.plannedCost > 0 ? Math.max(18, Math.round((cat.plannedCost / maxIceSideCost) * MAX_BAR_W)) : 0;
-
-                          const isWideUnplan = unplanW >= 135;
-                          const isWidePlan = planW >= 135;
-
-                          const unplanBarX = centerLeftX - 6 - unplanW;
-                          const unplanBarY = rowY - barH / 2;
-
-                          const unplanBadgeX = centerLeftX - 6 - unplanW - 8 - badgeW;
-                          const unplanBadgeY = rowY - badgeH / 2;
-
-                          const planBarX = centerRightX + 6;
-                          const planBarY = rowY - barH / 2;
-
-                          const planBadgeX = centerRightX + 6 + planW + 8;
-                          const planBadgeY = rowY - badgeH / 2;
-
-                          return (
-                            <g 
-                              key={cat.name} 
-                              className="ice-cat-bar-group"
-                              data-tip={`<b>📦 ${cat.name}</b><br/>Total Freight: ₹ ${toLacs(cat.totalCost)}<br/><span style="color:#FB7185">▼ Unplanned (Left): ₹ ${toLacs(cat.unplannedCost)} (${unplanRatio}%)</span><br/><span style="color:#2DD4BF">▲ Planned (Right): ₹ ${toLacs(cat.plannedCost)} (${planRatio}%)</span><br/>Volume: ${inIN(cat.cse)} CSE &bull; ${toTons(cat.weight)}<br/>Trips: ${cat.trips} Trips`}
-                            >
-                              {/* UNPLANNED (LEFT) SIDE */}
-                              {cat.unplannedCost > 0 && (
-                                <>
-                                  <rect 
-                                    className="cat-bar-rect" 
-                                    x={unplanBarX} 
-                                    y={unplanBarY} 
-                                    width={unplanW} 
-                                    height={barH} 
-                                    rx={10} 
-                                    fill="url(#barUnplanHGrad)"
-                                    filter="url(#iceCardShadow)"
-                                  />
-                                  {isWideUnplan ? (
-                                    <text 
-                                      x={centerLeftX - 6 - 16} 
-                                      y={rowY + 5.5} 
-                                      textAnchor="end" 
-                                      fill="#FFFFFF" 
-                                      fontSize="15" 
-                                      fontWeight="900" 
-                                      style={{ pointerEvents: 'none' }}
-                                    >
-                                      ₹ {toLacs(cat.unplannedCost)}
-                                    </text>
-                                  ) : (
-                                    <g>
-                                      <rect 
-                                        x={unplanBadgeX} 
-                                        y={unplanBadgeY} 
-                                        width={badgeW} 
-                                        height={badgeH} 
-                                        rx={9} 
-                                        fill="#FFFFFF" 
-                                        stroke="#E11D48" 
-                                        strokeWidth="1.6" 
-                                        filter="url(#iceCardShadow)"
-                                      />
-                                      <text 
-                                        x={unplanBadgeX + badgeW / 2} 
-                                        y={rowY + 5} 
-                                        textAnchor="middle" 
-                                        fill="#E11D48" 
-                                        fontSize="14" 
-                                        fontWeight="900" 
-                                        style={{ pointerEvents: 'none' }}
-                                      >
-                                        ₹ {toLacs(cat.unplannedCost)}
-                                      </text>
-                                    </g>
-                                  )}
-                                </>
-                              )}
-
-                              {/* CENTER CATEGORY PILL */}
-                              <rect 
-                                className="cat-pill-bg" 
-                                x={pillX} 
-                                y={pillY} 
-                                width={pillW} 
-                                height={pillH} 
-                                rx={10} 
-                                fill="#FFFFFF" 
-                                filter="url(#iceCardShadow)"
-                              />
-                              <text 
-                                x={CX} 
-                                y={rowY + 5.5} 
-                                textAnchor="middle" 
-                                fill="#0F172A" 
-                                fontSize="15" 
-                                fontWeight="900" 
-                                letterSpacing="0.2"
-                                style={{ pointerEvents: 'none' }}
-                              >
-                                {cat.name}
-                              </text>
-
-                              {/* PLANNED (RIGHT) SIDE */}
-                              {cat.plannedCost > 0 && (
-                                <>
-                                  <rect 
-                                    className="cat-bar-rect" 
-                                    x={planBarX} 
-                                    y={planBarY} 
-                                    width={planW} 
-                                    height={barH} 
-                                    rx={10} 
-                                    fill="url(#barPlanHGrad)"
-                                    filter="url(#iceCardShadow)"
-                                  />
-                                  {isWidePlan ? (
-                                    <text 
-                                      x={centerRightX + 6 + 16} 
-                                      y={rowY + 5.5} 
-                                      textAnchor="start" 
-                                      fill="#FFFFFF" 
-                                      fontSize="15" 
-                                      fontWeight="900" 
-                                      style={{ pointerEvents: 'none' }}
-                                    >
-                                      ₹ {toLacs(cat.plannedCost)}
-                                    </text>
-                                  ) : (
-                                    <g>
-                                      <rect 
-                                        x={planBadgeX} 
-                                        y={planBadgeY} 
-                                        width={badgeW} 
-                                        height={badgeH} 
-                                        rx={9} 
-                                        fill="#FFFFFF" 
-                                        stroke="#00897B" 
-                                        strokeWidth="1.6" 
-                                        filter="url(#iceCardShadow)"
-                                      />
-                                      <text 
-                                        x={planBadgeX + badgeW / 2} 
-                                        y={rowY + 5} 
-                                        textAnchor="middle" 
-                                        fill="#00897B" 
-                                        fontSize="14" 
-                                        fontWeight="900" 
-                                        style={{ pointerEvents: 'none' }}
-                                      >
-                                        ₹ {toLacs(cat.plannedCost)}
-                                      </text>
-                                    </g>
-                                  )}
-                                </>
-                              )}
+                            {/* Underwater Light Refraction Caustics & Sunbeams */}
+                            <g className="sea-caustics">
+                              <polygon points="190,240 40,500 140,500" fill="url(#sunbeam1)"/>
+                              <polygon points="190,240 220,500 320,500" fill="url(#sunbeam2)"/>
                             </g>
-                          );
-                        });
-                      })()}
-                    </svg>
+
+                            {/* Layer 1: Background Deep Moving Wave */}
+                            <g className="sea-waves-container">
+                              <path
+                                className="sea-wave-back"
+                                d="M -100 240 C -40 240, 20 248, 80 240 C 140 240, 200 248, 260 240 C 320 240, 380 248, 440 240 L 440 500 L -100 500 Z"
+                                fill="url(#oceanDeepGrad)"
+                              />
+                            </g>
+
+                            {/* FLOATING REALISTIC ICEBERG */}
+                            <g className="ice-float-hero">
+                              <g clipPath="url(#iceLeftStageClip)" mask="url(#icebergEdgeFadeMask)">
+                                <image href={icebergImg} xlinkHref={icebergImg} x="0" y="0" width="380" height="500" preserveAspectRatio="none"/>
+                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)" opacity="0.85" style={{ mixBlendMode: 'color' }}/>
+                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)" opacity="0.55" style={{ mixBlendMode: 'overlay' }}/>
+                                <rect x="0" y="240" width="380" height="260" fill="#0284C7" opacity="0.35" style={{ mixBlendMode: 'screen' }}/>
+                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanMidWaveGrad)" opacity="0.45" style={{ mixBlendMode: 'soft-light' }}/>
+                              </g>
+                            </g>
+
+                            {/* Layer 2: Mid-ground Translucent Rolling Waves */}
+                            <g className="sea-waves-container">
+                              <path
+                                className="sea-wave-mid"
+                                d="M -100 240 C -40 246, 20 240, 80 240 C 140 246, 200 240, 260 240 C 320 246, 380 240, 440 240 L 440 500 L -100 500 Z"
+                                fill="url(#oceanMidWaveGrad)"
+                              />
+                            </g>
+
+                            {/* Layer 3: Foreground Waving Ocean Foam */}
+                            <g className="sea-waves-container">
+                              <path
+                                className="sea-wave-fore"
+                                d="M -100 242 C -30 240, 40 250, 110 242 C 180 240, 250 250, 320 242 C 390 240, 460 250, 530 242 L 530 500 L -100 500 Z"
+                                fill="url(#oceanForeWaveGrad)"
+                              />
+                              <path
+                                className="sea-wave-surface-line"
+                                d="M -100 240 C -30 240, 40 245, 110 240 C 180 240, 250 245, 320 240 C 390 240, 460 245, 530 240"
+                                fill="none"
+                                stroke="url(#waveFoamGrad)"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                              />
+                            </g>
+                          </svg>
+
+                          {/* TOP-LEFT HERO CARD: PLANNED (Pure HTML/CSS - 0% compression, 100% normal fonts) */}
+                          <div 
+                            className="ice-hero-html-card planned"
+                            data-tip={`<b>▲ ROUTE TYPE: PLANNED (PEAK OF ICEBERG)</b><br/>Planned Total: ₹ ${toLacs(icePlannedCost)} (${icePlanPct}%)<br/>Volume: ${inIN(icePlannedCSE)} CSE &bull; ${toTons(icePlannedWt)}<br/>Trips: ${icePlannedTrips} Trips`}
+                          >
+                            <span className="hero-tag planned">▲ PLANNED</span>
+                            <span className="hero-main-val">₹ {toLacs(icePlannedCost)}</span>
+                            <span className="hero-sub planned">{icePlanPct}% OF FREIGHT</span>
+                          </div>
+
+                          {/* BOTTOM-RIGHT HERO CARD: UNPLANNED (Pure HTML/CSS - 0% compression, 100% normal fonts) */}
+                          <div 
+                            className="ice-hero-html-card unplanned"
+                            data-tip={`<b>▼ ROUTE TYPE: UNPLANNED (SUBMERGED ICEBERG)</b><br/>Unplanned Total: ₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
+                          >
+                            <span className="hero-tag unplanned">▼ UNPLANNED</span>
+                            <span className="hero-main-val">₹ {toLacs(iceUnplannedCost)}</span>
+                            <span className="hero-sub unplanned">{iceUnplanPct}% OF FREIGHT</span>
+                          </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: PARCHMENT CATEGORY COMPARISON CHART (100% Matching Co-Pack Font & Weights) */}
+                        <div className="iceberg-right-category">
+                          {/* Comparison Header */}
+                          <div className="ice-cat-header-bar">
+                            <div 
+                              className="ice-header-pill-card unplanned"
+                              data-tip={`<b>▼ TOTAL UNPLANNED FREIGHT</b><br/>₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
+                            >
+                              <span className="hdr-tag"><span style={{ color: '#0C2366', fontSize: '9px' }}>▼</span> UNPLANNED</span>
+                              <span className="hdr-cost">₹ {toLacs(iceUnplannedCost)}</span>
+                            </div>
+
+                            <div className="ice-header-vs-circle">VS</div>
+
+                            <div 
+                              className="ice-header-pill-card planned"
+                              data-tip={`<b>▲ TOTAL PLANNED FREIGHT</b><br/>₹ ${toLacs(icePlannedCost)} (${icePlanPct}%)<br/>Volume: ${inIN(icePlannedCSE)} CSE &bull; ${toTons(icePlannedWt)}<br/>Trips: ${icePlannedTrips} Trips`}
+                            >
+                              <span className="hdr-tag"><span style={{ color: '#008779', fontSize: '9px' }}>▲</span> PLANNED</span>
+                              <span className="hdr-cost">₹ {toLacs(icePlannedCost)}</span>
+                            </div>
+                          </div>
+
+                          {/* Category Rows Container */}
+                          <div className="ice-cat-rows-container">
+                            <div className="ice-cat-center-spine"></div>
+                            {iceCats.map((cat) => {
+                              const planRatio = cat.totalCost > 0 ? ((cat.plannedCost / cat.totalCost) * 100).toFixed(1) : '0.0';
+                              const unplanRatio = cat.totalCost > 0 ? ((cat.unplannedCost / cat.totalCost) * 100).toFixed(1) : '0.0';
+                              const MAX_SIDE_BAR_PX = 85;
+                              const unplanBarW = cat.unplannedCost > 0 ? Math.max(6, Math.round((cat.unplannedCost / maxIceSideCost) * MAX_SIDE_BAR_PX)) : 0;
+                              const planBarW = cat.plannedCost > 0 ? Math.max(6, Math.round((cat.plannedCost / maxIceSideCost) * MAX_SIDE_BAR_PX)) : 0;
+
+                              return (
+                                <div 
+                                  key={cat.name} 
+                                  className="ice-cat-item-row"
+                                  data-tip={`<b>📦 ${cat.name}</b><br/>Total Freight: ₹ ${toLacs(cat.totalCost)}<br/><span style="color:#2563EB">▼ Unplanned (Left): ₹ ${toLacs(cat.unplannedCost)} (${unplanRatio}%)</span><br/><span style="color:#008779">▲ Planned (Right): ₹ ${toLacs(cat.plannedCost)} (${planRatio}%)</span><br/>Volume: ${inIN(cat.cse)} CSE &bull; ${toTons(cat.weight)}<br/>Trips: ${cat.trips} Trips`}
+                                >
+                                  {/* Left: Unplanned (Value hugs left tip of bar) */}
+                                  <div className="ice-row-side-unplan">
+                                    {cat.unplannedCost > 0 && (
+                                      <>
+                                        <span className="side-val">₹ {toLacs(cat.unplannedCost)}</span>
+                                        <div className="ice-bar-fill-unplan" style={{ width: `${unplanBarW}px` }}></div>
+                                      </>
+                                    )}
+                                  </div>
+
+                                  {/* Center: Category Pill */}
+                                  <div className="ice-center-pill">
+                                    {cat.name}
+                                  </div>
+
+                                  {/* Right: Planned (Value hugs right tip of bar) */}
+                                  <div className="ice-row-side-plan">
+                                    {cat.plannedCost > 0 && (
+                                      <>
+                                        <div className="ice-bar-fill-plan" style={{ width: `${planBarW}px` }}></div>
+                                        <span className="side-val">₹ {toLacs(cat.plannedCost)}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1680,7 +1662,7 @@ export default function App() {
                 <div className="copack-summary-box">
                   <div className="cp-kpi" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <span className="c-lab">ZERO COST SAVING</span>
+                      <span className="c-lab">ZERO COST</span>
                       <div className="c-val" id="cp-total-wt">{toTons(copackWt)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -1734,11 +1716,28 @@ export default function App() {
         onClose={() => setIsMapModalOpen(false)}
         headers={headers}
         columnMap={columnMap}
-        onSaveMap={(newMap) => setColumnMap(newMap)}
+        onSaveMap={(newMap) => {
+          setColumnMap(newMap);
+          const targetAOA = (currentAOA && currentAOA.length) ? currentAOA : (typeof EMBEDDED_MASTER_DATA !== 'undefined' ? EMBEDDED_MASTER_DATA : []);
+          if (targetAOA && targetAOA.length) {
+            const parsed = parseAOA(targetAOA, newMap);
+            setHeaders(parsed.headers);
+            setRows(parsed.rows);
+            if (activeFilename && activeFilename !== 'No file loaded') {
+              setFileInfo(`${activeFilename} (${parsed.rows.length} records)`);
+            }
+          }
+        }}
         onAutoMap={() => {
-          if (headers.length) {
-            const parsed = parseAOA(EMBEDDED_MASTER_DATA);
+          const targetAOA = (currentAOA && currentAOA.length) ? currentAOA : (typeof EMBEDDED_MASTER_DATA !== 'undefined' ? EMBEDDED_MASTER_DATA : []);
+          if (targetAOA && targetAOA.length) {
+            const parsed = parseAOA(targetAOA, null);
             setColumnMap(parsed.map);
+            setHeaders(parsed.headers);
+            setRows(parsed.rows);
+            if (activeFilename && activeFilename !== 'No file loaded') {
+              setFileInfo(`${activeFilename} (${parsed.rows.length} records)`);
+            }
           }
         }}
       />

@@ -36,7 +36,7 @@ export default function Header({ onOpenSidebar, fileInfo, onResetFilters, onOpen
         <button 
           className="btn-hdr secondary" 
           id="mapBtn" 
-          disabled={isMappingDisabled} 
+          title="Configure Excel Column Mapping" 
           onClick={onOpenMapping}
         >
           Column Mapping
