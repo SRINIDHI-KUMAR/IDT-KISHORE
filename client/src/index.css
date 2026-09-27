@@ -176,6 +176,25 @@
         .btn-hdr:active {
             transform: translateY(0);
         }
+        .btn-hdr.email-btn {
+            background: linear-gradient(135deg, #0078D4, #005A9E);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 120, 212, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .btn-hdr.email-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1084D9, #0067B8);
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-hdr.email-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .spin-icon {
+            animation: spin 0.85s linear infinite;
+        }
 
         .theme-toggle-btn {
             background: var(--card);

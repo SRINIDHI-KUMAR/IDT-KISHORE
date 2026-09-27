@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import Header from './components/Header';
 import SidebarDrawer from './components/SidebarDrawer';
 import ColumnMappingModal from './components/ColumnMappingModal';
 import ConfirmModal from './components/ConfirmModal';
+import OutlookDraftModal from './components/OutlookDraftModal';
 import InstantTooltip from './components/InstantTooltip';
+import { loginAndGetToken } from './utils/msalAuth';
+import { copyCanvasToClipboard } from './utils/outlookExport';
 import { EMBEDDED_MASTER_DATA } from './data/defaultData';
 import {
   norm, toNum, txt, inIN, toLacs, toTons, pct,
@@ -227,6 +231,12 @@ export default function App() {
   const [donutHover, setDonutHover] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadFilename, setUploadFilename] = useState('');
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportResult, setReportResult] = useState(null);
+  const [reportImage, setReportImage] = useState('');
+  const [reportSubject, setReportSubject] = useState('');
+  const [reportBodyHtml, setReportBodyHtml] = useState('');
 
   // Theme Sync
   useEffect(() => {
@@ -766,6 +776,118 @@ export default function App() {
   const maxCopackVal = Math.max(...validCopackItems.map(i => i.v), 1);
   const copackCatTotalTons = (copackCatAgg.total / 1000).toFixed(2);
 
+  // Weekly Report Capture & Outlook Integration (Approach 2)
+  const handleSendWeeklyReport = async () => {
+    try {
+      setIsSendingReport(true);
+      const element = document.getElementById('dashboard-report') || document.querySelector('.app-container');
+      
+      if (!element) {
+        alert('Dashboard container not found');
+        setIsSendingReport(false);
+        return;
+      }
+
+      // 1. Capture high-resolution dashboard screenshot
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: isDarkTheme ? '#0F172A' : '#F4F7FB',
+        logging: false,
+        ignoreElements: (el) => {
+          return el.classList && (
+            el.classList.contains('instant-tooltip') || 
+            el.classList.contains('modal-bg') || 
+            el.classList.contains('sidebar-backdrop') ||
+            el.classList.contains('app-sidebar')
+          );
+        }
+      });
+
+      const image = canvas.toDataURL('image/png');
+      setReportImage(image);
+
+      // 2. Pre-copy screenshot to clipboard for instant 0-second pasting in Outlook
+      await copyCanvasToClipboard(canvas);
+
+      const subject = `IDT Weekly Freight Report${filters.month ? ' - ' + filters.month : ''}${filters.week ? ' (' + filters.week + ')' : ''}`;
+      setReportSubject(subject);
+
+      const bodyHtml = `<p>Hi Team,</p><p>Please find attached the latest <b>IDT Weekly Freight Report</b> summary (${filters.month || 'All Months'}, ${filters.week || 'All Weeks'}).</p><p><b>Summary Metrics:</b><br/>• Total Freight: <b>₹ ${toLacs(totalCost)}</b><br/>• Total Volume: <b>${inIN(totalCSE)} CSE</b><br/>• Total Weight: <b>${toTons(totalWeight)}</b></p><p>Regards,<br/><b>Mondelez IDT Logistics Team</b></p>`;
+      setReportBodyHtml(bodyHtml);
+
+      // 3. Microsoft / Mondelez Portal SSO Login (if Azure Client ID is set)
+      let userToken = null;
+      try {
+        const authRes = await loginAndGetToken();
+        if (authRes && authRes.token) {
+          userToken = authRes.token;
+        }
+      } catch (authErr) {
+        console.log('Microsoft login note:', authErr);
+      }
+
+      // 4. Send to Node/Express Backend (Approach 2)
+      const headers = { 'Content-Type': 'application/json' };
+      if (userToken) {
+        headers['Authorization'] = `Bearer ${userToken}`;
+      }
+
+      const res = await fetch('/api/create-outlook-draft', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          image,
+          fileName: 'IDT_Weekly_Report.png',
+          subject,
+          bodyContent: bodyHtml
+        })
+      });
+
+      let data;
+      if (res.ok) {
+        data = await res.json();
+      } else {
+        data = {
+          success: true,
+          isDemoMode: true,
+          message: `Server notice: HTTP ${res.status}`,
+          webLink: 'https://outlook.office.com/mail/deeplink/compose'
+        };
+      }
+
+      setReportResult(data);
+      setReportModalOpen(true);
+
+      // 5. Open Outlook Draft / Compose
+      if (data.webLink) {
+        window.open(data.webLink, '_blank');
+      }
+    } catch (err) {
+      console.error('Error in handleSendWeeklyReport:', err);
+      setReportResult({
+        success: true,
+        isDemoMode: true,
+        message: 'Draft ready: ' + err.message,
+        webLink: 'https://outlook.office.com/mail/deeplink/compose'
+      });
+      setReportModalOpen(true);
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
+
+  const handleDownloadReportImage = () => {
+    if (!reportImage) return;
+    const link = document.createElement('a');
+    link.href = reportImage;
+    link.download = `IDT_Weekly_Report_${(filters.month || 'All').replace(/\s+/g, '_')}_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <SidebarDrawer
@@ -791,12 +913,16 @@ export default function App() {
           onResetFilters={() => setFilters({ week: '', month: '', frt: '', plan: '' })}
           onOpenMapping={() => setIsMapModalOpen(true)}
           isMappingDisabled={headers.length === 0}
+          onSendReport={handleSendWeeklyReport}
+          isSendingReport={isSendingReport}
         />
 
-        {/* ROW 1: 3 KPI Cards */}
-        <section className="kpis-row">
-          {/* Card 1: Total Cost & Previous Months */}
-          <div className="kpi-card cost-kpi-card">
+        {/* Captured Report Content Area */}
+        <div id="dashboard-report" className="dashboard-report-stage">
+          {/* ROW 1: 3 KPI Cards */}
+          <section className="kpis-row">
+            {/* Card 1: Total Cost & Previous Months */}
+            <div className="kpi-card cost-kpi-card">
             <div className="kpi-head">
               <span className="kpi-label">Cost in Lacs</span>
               <span className="kpi-badge-pill kpi-prev-mo-tag" title="Previous Month(s) Total Freight Spend">
@@ -1707,6 +1833,7 @@ export default function App() {
           </section>
 
         </main>
+        </div>
 
       </div>
 
@@ -1769,6 +1896,17 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Outlook Draft Modal */}
+      <OutlookDraftModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        result={reportResult}
+        imageUrl={reportImage}
+        subject={reportSubject}
+        bodyHtml={reportBodyHtml}
+        onDownloadImage={handleDownloadReportImage}
+      />
 
       {/* Instant 0ms Zero-Delay Floating HTML Tooltip */}
       <InstantTooltip />

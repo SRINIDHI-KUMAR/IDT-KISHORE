@@ -1,0 +1,12 @@
+{
+  "name": "idt-tracker-mondelez",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mondelez IDT Freight Analytics Dashboard with Microsoft Outlook Integration",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "server": "npm --prefix server run start",
+    "server:dev": "npm --prefix server run dev",
+    "build": "npm --prefix client run build"
+  }
+}

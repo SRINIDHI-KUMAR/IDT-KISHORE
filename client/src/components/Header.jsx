@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Header({ onOpenSidebar, fileInfo, onResetFilters, onOpenMapping, isMappingDisabled }) {
+export default function Header({ onOpenSidebar, fileInfo, onResetFilters, onOpenMapping, isMappingDisabled, onSendReport, isSendingReport }) {
   return (
     <header className="header-bar">
       <div className="header-left">
@@ -40,6 +40,30 @@ export default function Header({ onOpenSidebar, fileInfo, onResetFilters, onOpen
           onClick={onOpenMapping}
         >
           Column Mapping
+        </button>
+        <button 
+          className="btn-hdr email-btn" 
+          id="btn-send-weekly-report" 
+          title="Capture dashboard screenshot and create Outlook draft" 
+          onClick={onSendReport}
+          disabled={isSendingReport}
+        >
+          {isSendingReport ? (
+            <>
+              <svg className="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12"></circle>
+              </svg>
+              <span>Creating Draft...</span>
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>📧 Send Weekly Report</span>
+            </>
+          )}
         </button>
       </div>
     </header>
