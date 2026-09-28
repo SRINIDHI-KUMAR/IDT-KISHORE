@@ -90,23 +90,23 @@ def execute_screenshot_and_open_outlook():
     print("[Action] 4. Pressing Enter to launch Outlook...")
     pyautogui.press('enter')
 
-    # 3. Wait for Outlook App to open
-    print("[Action] 5. Waiting 3.5s for Outlook App to open...")
-    time.sleep(3.5)
+    # 3. Wait for Outlook App to fully open and load
+    print("[Action] 5. Waiting 6.0s for Outlook App to fully load...")
+    time.sleep(6.0)
 
     # 4. Click 'New' mail button via Ctrl + N shortcut
     print("[Action] 6. Triggering 'New' Mail (Ctrl + N)...")
     pyautogui.hotkey('ctrl', 'n')
 
     # 5. Wait for Compose editor to focus 'To' field
-    time.sleep(1.8)
+    time.sleep(2.2)
     print("[Action] 7. Navigating 3x Tab to Email Body...")
     for i in range(1, 4):
         send_key_tap(VK_TAB)
-        time.sleep(0.2)
+        time.sleep(0.25)
 
     # 6. Paste screenshot into body
-    time.sleep(0.3)
+    time.sleep(0.35)
     print("[Action] 8. Pasting screenshot (Ctrl + V) into email body...")
     pyautogui.hotkey('ctrl', 'v')
 
