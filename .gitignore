@@ -1,0 +1,22 @@
+# Node
+node_modules/
+client/node_modules/
+client/dist/
+dist/
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment / Logs
+.env
+*.log
+.DS_Store
+Thumbs.db
