@@ -1,8 +1,10 @@
+import os
 import io
 import time
 import base64
 import ctypes
 import threading
+import subprocess
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -63,34 +65,49 @@ def copy_image_to_clipboard(image_bytes: bytes):
         print(f"[Error] Failed to set clipboard image: {e}")
         return False
 
-def auto_navigate_and_paste(delay: float = 4.0):
+def launch_outlook_app():
+    """Launches the Windows Outlook Desktop Application."""
+    try:
+        os.startfile("mailto:?subject=IDT%20Dashboard%20Report%20Snapshot")
+        print("[App] Launched Outlook Desktop App via system mail protocol.")
+    except Exception as e:
+        print(f"[App] mailto note: {e}")
+        try:
+            subprocess.Popen(["olk.exe"])
+            print("[App] Launched olk.exe directly.")
+        except Exception as err:
+            print(f"[App] Failed to launch Outlook: {err}")
+
+def auto_navigate_and_paste(delay: float = 3.8):
     """
-    Waits for Outlook Compose to load in the current active Chrome window,
-    presses Tab 3 times (To -> Cc -> Subject -> Body),
-    and sends Ctrl+V to paste the screenshot directly into the email body.
-    Leaves the browser window size and maximized state 100% untouched.
+    Launches the Outlook Desktop App, waits for compose window to appear in the 'To' field,
+    presses Tab 3 times (To -> Cc -> Subject -> Body), and sends Ctrl+V to paste the screenshot.
     """
-    print(f"[Automation] Waiting {delay}s for Outlook Web Compose to load...")
+    # 1. Launch the Desktop Outlook App
+    launch_outlook_app()
+
+    # 2. Wait for Outlook App to launch and focus
+    print(f"[Automation] Waiting {delay}s for Outlook App to focus...")
     time.sleep(delay)
 
-    # Press TAB 3 times with clear spacing
+    # 3. Press TAB 3 times with clear spacing
     for i in range(1, 4):
         print(f"[Automation] Pressing TAB ({i}/3)...")
         send_key_tap(VK_TAB)
         time.sleep(0.22)
 
-    # Settle cursor into body editor and execute Paste (Ctrl + V)
+    # 4. Settle cursor into body editor and execute Paste (Ctrl + V)
     time.sleep(0.3)
-    print("[Automation] Pasting screenshot (Ctrl + V) into Outlook message body...")
+    print("[Automation] Pasting screenshot (Ctrl + V) into Outlook App message body...")
     send_ctrl_v()
-    print("[Automation] Done! Screenshot successfully pasted into Outlook body.")
+    print("[Automation] Done! Screenshot successfully pasted into Outlook App body.")
 
 @app.post("/api/outlook-paste")
 async def handle_outlook_paste(req: Request):
     try:
         payload = await req.json()
         raw_b64 = payload.get("image", "")
-        delay = float(payload.get("delay", 4.0))
+        delay = float(payload.get("delay", 3.8))
 
         if "," in raw_b64:
             raw_b64 = raw_b64.split(",", 1)[1]
@@ -98,13 +115,13 @@ async def handle_outlook_paste(req: Request):
         img_bytes = base64.b64decode(raw_b64)
         copied = copy_image_to_clipboard(img_bytes)
 
-        # Launch background paste thread
+        # Launch background thread: opens Outlook App & auto-pastes
         threading.Thread(target=auto_navigate_and_paste, args=(delay,), daemon=True).start()
 
         return {
             "status": "success",
             "clipboard_set": copied,
-            "message": f"Clipboard set. Pressing 3x Tab and pasting in {delay}s."
+            "message": f"Clipboard set. Opening Outlook App and pasting in {delay}s."
         }
     except Exception as e:
         print(f"[Error] in /api/outlook-paste: {e}")
@@ -116,4 +133,3 @@ def health():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5005)
-

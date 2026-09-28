@@ -123,7 +123,12 @@ export async function captureAndOpenOutlook(onProgress, showToast) {
       }
     }
 
-    // 4. Send to Python Backend for Automated In-Body Pasting (if running)
+    if (onProgress) onProgress('copied');
+    if (showToast) {
+      showToast('📸 Screenshot copied! Opening Outlook App...');
+    }
+
+    // 4. Send to Python Backend to Launch Outlook App & Auto-Paste
     if (blob) {
       try {
         const reader = new FileReader();
@@ -135,18 +140,18 @@ export async function captureAndOpenOutlook(onProgress, showToast) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64Data })
           }).catch(() => {
-            // Python backend optional, fallback to manual Ctrl+V
+            // If backend is not active, open Outlook App via mail protocol directly
+            window.location.href = 'mailto:?subject=IDT%20Dashboard%20Report%20Snapshot';
           });
         };
-      } catch (_) {}
+      } catch (_) {
+        window.location.href = 'mailto:?subject=IDT%20Dashboard%20Report%20Snapshot';
+      }
     }
-
-    // 5. Open Outlook Compose in a new tab
-    window.open('https://outlook.office.com/mail/deeplink/compose?subject=IDT%20Dashboard%20Report%20Snapshot', '_blank');
 
   } catch (err) {
     console.error('Error during screenshot capture:', err);
-    window.open('https://outlook.office.com/mail/deeplink/compose?subject=IDT%20Dashboard%20Report%20Snapshot', '_blank');
+    window.location.href = 'mailto:?subject=IDT%20Dashboard%20Report%20Snapshot';
   } finally {
     if (stream) {
       try {
