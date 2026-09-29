@@ -118,27 +118,30 @@ def execute_screenshot_and_open_outlook():
     print("[Action] 4. Pressing Enter to launch Outlook...")
     pyautogui.press('enter')
 
-    # 3. Actively wait until the Outlook window is opened and ready (zero fixed blind wait)
+    # 3. Actively confirm that Outlook window is opened and visible
     wait_for_outlook_window(timeout=15.0)
 
-    # 4. Small stabilization pause for Outlook UI to be interactive, then press Ctrl + N
-    time.sleep(0.8)
-    print("[Action] 6. Outlook is open! Triggering 'New' Mail (Ctrl + N)...")
+    # 4. Wait 5.0 seconds after Outlook is confirmed open for full UI connection & readiness
+    print("[Action] 6. Outlook confirmed open! Waiting 5.0s for app to fully initialize...")
+    time.sleep(5.0)
+
+    # 5. Trigger 'New' Mail (Ctrl + N)
+    print("[Action] 7. Triggering 'New' Mail (Ctrl + N)...")
     pyautogui.hotkey('ctrl', 'n')
 
-    # 5. Wait for Compose editor to focus 'To' field
-    time.sleep(1.8)
-    print("[Action] 7. Navigating 3x Tab to Email Body...")
+    # 6. Wait for Compose editor to render 'To' field
+    time.sleep(2.2)
+    print("[Action] 8. Navigating 3x Tab to Email Body...")
     for i in range(1, 4):
         send_key_tap(VK_TAB)
-        time.sleep(0.22)
+        time.sleep(0.25)
 
-    # 6. Paste screenshot into body
-    time.sleep(0.3)
-    print("[Action] 8. Pasting screenshot (Ctrl + V) into email body...")
+    # 7. Paste screenshot into body
+    time.sleep(0.35)
+    print("[Action] 9. Pasting screenshot (Ctrl + V) into email body...")
     pyautogui.hotkey('ctrl', 'v')
 
-    print("[Success] Completed: Win+PrintScreen -> Outlook Detected -> New Mail -> Auto-pasted.")
+    print("[Success] Completed: Win+PrintScreen -> Outlook Confirmed -> 5s Wait -> New Mail -> Auto-pasted.")
 
 @app.post("/api/trigger-screenshot-and-outlook")
 async def handle_trigger():
