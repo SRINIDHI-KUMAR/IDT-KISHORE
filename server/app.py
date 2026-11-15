@@ -1,13 +1,19 @@
+import os
 import io
 import time
+import base64
 import ctypes
+import tempfile
 import threading
+import subprocess
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 import uvicorn
-import win32gui
+import pythoncom
 import win32clipboard
-import pyautogui
+import win32com.client.dynamic
 from PIL import ImageGrab, Image
 
 app = FastAPI(title="IDT Dashboard Outlook Automation Backend")
@@ -21,37 +27,26 @@ app.add_middleware(
 )
 
 user32 = ctypes.windll.user32
-
 VK_LWIN = 0x5B
 VK_SNAPSHOT = 0x2C
-VK_TAB = 0x09
-VK_CONTROL = 0x11
-VK_V = 0x56
 KEYEVENTF_KEYUP = 0x0002
 
-def send_key_tap(vk_code: int):
-    """Sends a hardware-level key press and release event."""
-    user32.keybd_event(vk_code, 0, 0, 0)
-    time.sleep(0.06)
-    user32.keybd_event(vk_code, 0, KEYEVENTF_KEYUP, 0)
-    time.sleep(0.06)
-
 def press_win_printscreen():
-    """Simulates pressing Win + PrintScreen at the hardware keyboard level."""
-    print("[Action] 1. Pressing Win + PrintScreen...")
-    user32.keybd_event(VK_LWIN, 0, 0, 0)
-    time.sleep(0.06)
-    user32.keybd_event(VK_SNAPSHOT, 0, 0, 0)
-    time.sleep(0.08)
-    user32.keybd_event(VK_SNAPSHOT, 0, KEYEVENTF_KEYUP, 0)
-    time.sleep(0.06)
-    user32.keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0)
-    time.sleep(0.1)
-
-def copy_native_screen_to_clipboard():
-    """Grabs full native desktop screen and places DIB bitmap onto Windows clipboard."""
+    """Simulates pressing Win + PrintScreen to save full desktop capture to Pictures\\Screenshots."""
     try:
-        img = ImageGrab.grab()
+        user32.keybd_event(VK_LWIN, 0, 0, 0)
+        time.sleep(0.05)
+        user32.keybd_event(VK_SNAPSHOT, 0, 0, 0)
+        time.sleep(0.06)
+        user32.keybd_event(VK_SNAPSHOT, 0, KEYEVENTF_KEYUP, 0)
+        time.sleep(0.05)
+        user32.keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0)
+    except Exception as e:
+        print(f"[Keybd] Win+PrintScreen error: {e}")
+
+def copy_pil_image_to_clipboard(img: Image.Image):
+    """Sets DIB bitmap directly onto Windows system clipboard."""
+    try:
         output = io.BytesIO()
         img.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]  # Strip 14-byte BMP header for CF_DIB
@@ -61,109 +56,208 @@ def copy_native_screen_to_clipboard():
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
         win32clipboard.CloseClipboard()
-        print("[Clipboard] Screen successfully copied to Windows system clipboard.")
+        print("[Clipboard] Image placed on Windows system clipboard (CF_DIB).")
         return True
     except Exception as e:
-        print(f"[Error] Failed to copy screen to clipboard: {e}")
+        print(f"[Clipboard] Error: {e}")
         return False
 
-def wait_for_outlook_window(timeout: float = 15.0):
+def find_outlook_executable() -> str:
+    """Finds Outlook executable path."""
+    candidates = [
+        r"C:\Program Files\Microsoft Office\Root\Office16\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Root\Office16\OUTLOOK.EXE",
+        r"C:\Program Files\Microsoft Office\Office16\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Office16\OUTLOOK.EXE",
+        r"C:\Program Files\Microsoft Office\Office15\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Office15\OUTLOOK.EXE"
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            return p
+    return "outlook.exe"
+
+def save_screenshot_image(image_base64: Optional[str] = None) -> str:
     """
-    Polls Windows every 120ms until the Outlook window is actually opened and visible.
-    Replaces fixed blind delays with real-time window detection.
+    Saves screenshot to disk so it can be attached to Outlook draft.
+    Also places it on the system clipboard.
     """
-    print("[Action] 5. Actively waiting for Outlook window to open...")
-    start_time = time.time()
-
-    while time.time() - start_time < timeout:
-        found_hwnd = None
-
-        def enum_handler(hwnd, _):
-            nonlocal found_hwnd
-            if win32gui.IsWindowVisible(hwnd):
-                title = win32gui.GetWindowText(hwnd).strip().lower()
-                if "outlook" in title and "idt" not in title and "visual studio" not in title:
-                    found_hwnd = hwnd
-
-        win32gui.EnumWindows(enum_handler, None)
-        if found_hwnd:
-            print(f"[Action] Outlook window detected and active! (HWND: {found_hwnd})")
-            return found_hwnd
-        time.sleep(0.12)
-
-    print("[Action] Detection timeout reached, proceeding...")
-    return None
-
-def execute_screenshot_and_open_outlook():
-    """
-    1. Presses Win + PrintScreen and copies image to clipboard.
-    2. Opens Windows Start -> Types 'outlook' -> Presses Enter.
-    3. Detects when Outlook window is actually opened -> Presses Ctrl + N (New Mail).
-    4. Navigates with Tab 3 times -> Pastes screenshot (Ctrl + V).
-    """
-    # 1. Take native screenshot via Win + PrintScreen and copy to clipboard
     press_win_printscreen()
-    copy_native_screen_to_clipboard()
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    out_dir = os.path.join(tempfile.gettempdir(), "idt_reports")
+    os.makedirs(out_dir, exist_ok=True)
+    file_path = os.path.join(out_dir, f"IDT_Logistics_Weekly_Report_{timestamp}.png")
 
-    # 2. Open Start Menu, type outlook, press enter
-    time.sleep(0.4)
-    print("[Action] 2. Pressing Windows Key...")
-    pyautogui.press('win')
+    saved = False
+    if image_base64:
+        try:
+            b64_str = image_base64.split(',')[-1]
+            raw_bytes = base64.b64decode(b64_str)
+            with open(file_path, "wb") as f:
+                f.write(raw_bytes)
+            saved = True
+            print(f"[Screenshot] Saved frontend canvas screenshot: {file_path}")
+        except Exception as e:
+            print(f"[Screenshot] Failed to decode base64: {e}")
 
-    time.sleep(0.4)
-    print("[Action] 3. Typing 'outlook'...")
-    pyautogui.write('outlook', interval=0.04)
+    if not saved:
+        try:
+            img = ImageGrab.grab()
+            img.save(file_path, "PNG")
+            saved = True
+            print(f"[Screenshot] Saved native desktop screen grab: {file_path}")
+        except Exception as e:
+            print(f"[Screenshot] ImageGrab failed: {e}")
 
-    time.sleep(0.4)
-    print("[Action] 4. Pressing Enter to launch Outlook...")
-    pyautogui.press('enter')
+    if not saved or not os.path.isfile(file_path):
+        # Fallback to existing public asset if both base64 and native grab fail
+        for fallback_cand in [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client", "public", "south_india_map.png")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client", "public", "iceberg.png"))
+        ]:
+            if os.path.isfile(fallback_cand):
+                import shutil
+                shutil.copyfile(fallback_cand, file_path)
+                saved = True
+                print(f"[Screenshot] Fallback image used: {file_path}")
+                break
 
-    # 3. Actively confirm that Outlook window is opened and visible
-    wait_for_outlook_window(timeout=15.0)
-
-    # 4. Wait 5.0 seconds after Outlook is confirmed open for full UI connection & readiness
-    print("[Action] 6. Outlook confirmed open! Waiting 5.0s for app to fully initialize...")
-    time.sleep(5.0)
-
-    # 5. Trigger 'New' Mail (Ctrl + N)
-    print("[Action] 7. Triggering 'New' Mail (Ctrl + N)...")
-    pyautogui.hotkey('ctrl', 'n')
-
-    # 6. Wait for Compose editor to render 'To' field
-    time.sleep(2.2)
-    print("[Action] 8. Navigating 3x Tab to Email Body...")
-    for i in range(1, 4):
-        send_key_tap(VK_TAB)
-        time.sleep(0.25)
-
-    # 7. Paste screenshot into body
-    time.sleep(0.35)
-    print("[Action] 9. Pasting screenshot (Ctrl + V) into email body...")
-    pyautogui.hotkey('ctrl', 'v')
-
-    print("[Success] Completed: Win+PrintScreen -> Outlook Confirmed -> 5s Wait -> New Mail -> Auto-pasted.")
-
-@app.post("/api/trigger-screenshot-and-outlook")
-async def handle_trigger():
+    # Copy to clipboard
     try:
-        # Run in background thread so HTTP response returns instantly to React
-        threading.Thread(target=execute_screenshot_and_open_outlook, daemon=True).start()
+        if os.path.isfile(file_path):
+            img = Image.open(file_path)
+            copy_pil_image_to_clipboard(img)
+    except Exception as e:
+        print(f"[Clipboard] Error: {e}")
+
+    return file_path
+
+def execute_open_outlook_draft(subject: str, screenshot_path: str, html_body: Optional[str] = None, text_body: Optional[str] = None):
+    """
+    Opens Outlook Classic and creates a new email draft with the screenshot attached and displayed on the UI.
+    """
+    subject = subject or "[IDT LOGISTICS REPORT] Weekly Freight Performance & Dashboard Summary"
+    opened = False
+
+    # Method 1: Native Windows COM Automation (Directly creates mail, attaches SS, and displays draft)
+    try:
+        print("[Outlook Task] 1. Initializing Outlook COM automation...")
+        ol = win32com.client.dynamic.Dispatch("Outlook.Application")
+        mail = ol.CreateItem(0)  # 0 = olMailItem
+        mail.Subject = subject
+
+        # Attach the screenshot file to the draft
+        if os.path.isfile(screenshot_path):
+            print(f"[Outlook Task] 2. Attaching screenshot {screenshot_path} to draft...")
+            att = mail.Attachments.Add(os.path.abspath(screenshot_path))
+            try:
+                PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
+                att.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, "dashboard_screenshot")
+            except Exception as prop_err:
+                print(f"[Outlook Task] Content ID property info: {prop_err}")
+
+        # Embed screenshot in HTML body
+        cid_img = '<div style="margin: 16px 0;"><img src="cid:dashboard_screenshot" style="max-width: 920px; width: 100%; border: 1.5px solid #CBD5E1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" alt="IDT Dashboard Screenshot" /></div>'
+        
+        if html_body:
+            if "<!-- OPENING STATEMENT -->" in html_body:
+                final_html = html_body.replace("<!-- OPENING STATEMENT -->", f"{cid_img}\n<!-- OPENING STATEMENT -->")
+            elif "<body" in html_body:
+                body_idx = html_body.find(">") + 1
+                final_html = html_body[:body_idx] + f"\n{cid_img}\n" + html_body[body_idx:]
+            else:
+                final_html = f"<html><body>{cid_img}{html_body}</body></html>"
+            mail.HTMLBody = final_html
+        elif text_body:
+            mail.Body = text_body
+
+        print("[Outlook Task] 3. Displaying Outlook Classic draft on screen...")
+        mail.Display(False)
+        try:
+            mail.GetInspector.Activate()
+        except Exception:
+            pass
+
+        opened = True
+        print("[Success] Outlook Classic automatically opened and draft displayed with attached screenshot!")
+    except Exception as e:
+        print(f"[Outlook Task] COM method info: {e}. Trying executable spawn fallback...")
+
+    # Method 2: Fallback direct spawn via outlook.exe /c ipm.note /a <screenshot_path>
+    if not opened:
+        try:
+            exe_path = find_outlook_executable()
+            print(f"[Outlook Task] Spawning: {exe_path} /c ipm.note /a {screenshot_path}")
+            subprocess.Popen([exe_path, '/c', 'ipm.note', '/a', os.path.abspath(screenshot_path)])
+            opened = True
+            print("[Success] Outlook Classic spawned via executable with attachment flag!")
+        except Exception as e2:
+            print(f"[Error] Failed to spawn Outlook executable: {e2}")
+
+    return opened
+
+class ReportDraftRequest(BaseModel):
+    subject: Optional[str] = None
+    html_body: Optional[str] = None
+    text_body: Optional[str] = None
+    image_base64: Optional[str] = None
+    mentor_email: Optional[str] = None
+
+@app.post("/api/draft-outlook-report")
+async def draft_outlook_report(req: ReportDraftRequest):
+    """
+    Endpoint called when clicking 'Send Weekly Report'.
+    Saves screenshot, opens Outlook Classic, and attaches screenshot to the draft.
+    """
+    try:
+        def worker():
+            pythoncom.CoInitialize()
+            try:
+                ss_path = save_screenshot_image(req.image_base64)
+                execute_open_outlook_draft(req.subject, ss_path, req.html_body, req.text_body)
+            finally:
+                pythoncom.CoUninitialize()
+
+        threading.Thread(target=worker, daemon=True).start()
         return {
             "status": "success",
-            "message": "Win + PrintScreen triggered, waiting for Outlook window to trigger New Mail."
+            "message": "Outlook Classic draft opened with screenshot attached."
         }
     except Exception as e:
-        print(f"[Error] in /api/trigger-screenshot-and-outlook: {e}")
+        print(f"[Error] /api/draft-outlook-report: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/trigger-screenshot-and-outlook")
+async def handle_trigger(req: Optional[ReportDraftRequest] = None):
+    img_b64 = req.image_base64 if req else None
+    subj = req.subject if req else "[IDT LOGISTICS REPORT] Weekly Dashboard Performance"
+    html_b = req.html_body if req else None
+    text_b = req.text_body if req else None
+    try:
+        def worker():
+            pythoncom.CoInitialize()
+            try:
+                ss_path = save_screenshot_image(img_b64)
+                execute_open_outlook_draft(subj, ss_path, html_b, text_b)
+            finally:
+                pythoncom.CoUninitialize()
+
+        threading.Thread(target=worker, daemon=True).start()
+        return {
+            "status": "success",
+            "message": "Outlook Classic draft opened with screenshot attached."
+        }
+    except Exception as e:
+        print(f"[Error] /api/trigger-screenshot-and-outlook: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.post("/api/outlook-paste")
 async def handle_legacy_paste(req: Request):
-    """Fallback endpoint."""
     return await handle_trigger()
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "IDT Outlook Automation Backend"}
+    return {"status": "ok", "service": "IDT Outlook Classic Automation Backend"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5005)

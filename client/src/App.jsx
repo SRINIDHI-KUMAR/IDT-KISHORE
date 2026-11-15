@@ -3,13 +3,16 @@ import Header from './components/Header';
 import SidebarDrawer from './components/SidebarDrawer';
 import ColumnMappingModal from './components/ColumnMappingModal';
 import ConfirmModal from './components/ConfirmModal';
+import UnplannedRoutesModal from './components/UnplannedRoutesModal';
+import WeeklyReportModal from './components/WeeklyReportModal';
 import InstantTooltip from './components/InstantTooltip';
 import { EMBEDDED_MASTER_DATA } from './data/defaultData';
+import html2canvas from 'html2canvas';
+import { buildWeeklyReportData, buildRichHtmlEmail, buildPlainTextEmail } from './utils/reportGenerator';
 import {
   norm, toNum, txt, inIN, toLacs, toTons, pct,
   normDepotName, normFrt, normPlan, normWeek
 } from './utils/formatters';
-import { captureAndOpenOutlook } from './utils/screenshot';
 import { icebergBase64, southIndiaMapBase64 } from './assets/imagesBase64';
 
 const VIBRANT_PALETTES = [
@@ -226,18 +229,16 @@ export default function App() {
   const [filters, setFilters] = useState({ week: '', month: '', frt: '', plan: '' });
   const [donutHover, setDonutHover] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(null);
-  const [toastMessage, setToastMessage] = useState(null);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
-  };
-
-  const handleOutlookShare = () => {
-    setIsSidebarOpen(false);
-    captureAndOpenOutlook(setIsCapturingScreenshot, showToast);
-  };
+  const [uploadFilename, setUploadFilename] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportToast, setReportToast] = useState(null);
+  const [isUnplannedModalOpen, setIsUnplannedModalOpen] = useState(false);
+  const [selectedUnplannedCategory, setSelectedUnplannedCategory] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [activeReportData, setActiveReportData] = useState(null);
+  const [reportHtml, setReportHtml] = useState('');
+  const [reportPlainText, setReportPlainText] = useState('');
+  const [activeScreenshot, setActiveScreenshot] = useState(null);
 
   // Theme Sync
   useEffect(() => {
@@ -776,30 +777,182 @@ export default function App() {
   const validCopackItems = copackCatAgg.arr.filter(i => i.name && i.name !== '(blank)' && i.name.toLowerCase() !== 'other');
   const maxCopackVal = Math.max(...validCopackItems.map(i => i.v), 1);
   const copackCatTotalTons = (copackCatAgg.total / 1000).toFixed(2);
+  const totalTrips = new Set(mainRows.map(r => r.lr).filter(Boolean)).size || mainRows.length;
+
+  const handleSendWeeklyReport = async () => {
+    if (isGeneratingReport) return;
+    try {
+      setIsSidebarOpen(false);
+      setIsGeneratingReport(true);
+      setReportToast({ type: 'info', msg: '📸 Capturing dashboard screenshot (SS) & launching Outlook Classic...' });
+
+      // 1. Calculate and build full analyst report dataset with 6 tables + recommendations
+      const reportData = buildWeeklyReportData({
+        mainRows,
+        copackRows,
+        filters
+      });
+      const htmlBody = buildRichHtmlEmail(reportData);
+      const plainTextBody = buildPlainTextEmail(reportData);
+
+      setActiveReportData(reportData);
+      setReportHtml(htmlBody);
+      setReportPlainText(plainTextBody);
+
+      // Brief delay to allow sidebar drawer animation to finish closing before screenshot capture
+      await new Promise(res => setTimeout(res, 200));
+
+      // 2. Capture screenshot of dashboard
+      let imageBase64 = null;
+      try {
+        const dashboardEl = document.querySelector('.app-container') || document.body;
+        if (dashboardEl) {
+          const canvas = await html2canvas(dashboardEl, {
+            useCORS: true,
+            allowTaint: false,
+            scale: 1.25,
+            logging: false,
+            ignoreElements: (el) => el.classList?.contains('leaflet-control-container')
+          });
+          try {
+            imageBase64 = canvas.toDataURL('image/png');
+            setActiveScreenshot(imageBase64);
+          } catch (tErr) {
+            console.warn('toDataURL warning:', tErr);
+          }
+
+          // Place screenshot image directly onto browser clipboard if supported
+          if (navigator.clipboard && window.ClipboardItem) {
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                try {
+                  await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                  ]);
+                } catch (clipErr) {
+                  console.warn('Browser clipboard write info:', clipErr);
+                }
+              }
+            }, 'image/png');
+          }
+        }
+      } catch (cvErr) {
+        console.warn('html2canvas screenshot capture fallback:', cvErr);
+      }
+
+      // 3. Trigger backend automation to take native screenshot, launch Outlook Classic & paste SS
+      let backendSuccess = false;
+      try {
+        const resp = await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: imageBase64,
+            subject: reportData.meta.subject,
+            html_body: htmlBody,
+            text_body: plainTextBody
+          })
+        });
+        if (resp.ok) backendSuccess = true;
+      } catch (backendErr) {
+        console.warn('Backend automation draft endpoint error:', backendErr);
+        try {
+          const resp2 = await fetch('http://127.0.0.1:5005/api/trigger-screenshot-and-outlook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: imageBase64 })
+          });
+          if (resp2.ok) backendSuccess = true;
+        } catch (e2) {}
+      }
+
+      // 4. Open executive report preview modal and display confirmation toast
+      setIsReportModalOpen(true);
+      setReportToast({
+        type: 'success',
+        msg: '✅ Outlook Classic invoked! Screenshot (SS) captured & pasted into email body.'
+      });
+
+      setTimeout(() => {
+        setReportToast(null);
+      }, 7000);
+
+    } catch (err) {
+      console.error('Weekly report generation error:', err);
+      setReportToast({ type: 'error', msg: 'Failed to generate weekly report: ' + (err.message || err) });
+      setTimeout(() => setReportToast(null), 6000);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleOpenOutlookAgain = async () => {
+    if (!activeReportData) return;
+    try {
+      let imageBase64 = null;
+      try {
+        const dashboardEl = document.querySelector('.app-container') || document.body;
+        if (dashboardEl) {
+          const canvas = await html2canvas(dashboardEl, {
+            useCORS: true,
+            allowTaint: false,
+            scale: 1.25,
+            logging: false,
+            ignoreElements: (el) => el.classList?.contains('leaflet-control-container')
+          });
+          try {
+            imageBase64 = canvas.toDataURL('image/png');
+            setActiveScreenshot(imageBase64);
+          } catch (tErr) {
+            console.warn('toDataURL warning:', tErr);
+          }
+        }
+      } catch (e) {}
+
+      await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: imageBase64,
+          subject: activeReportData.meta.subject,
+          html_body: reportHtml,
+          text_body: reportPlainText
+        })
+      });
+      setReportToast({
+        type: 'success',
+        msg: '✅ Outlook Classic invoked! Screenshot (SS) pasted into compose window.'
+      });
+      setTimeout(() => setReportToast(null), 5000);
+    } catch (e) {
+      const mailtoUrl = `mailto:?subject=${encodeURIComponent(activeReportData.meta.subject)}`;
+      window.open(mailtoUrl, '_self');
+    }
+  };
 
   return (
     <>
-      {toastMessage && (
-        <div style={{
+      {reportToast && (
+        <div className="report-toast-banner" style={{
           position: 'fixed',
           top: '18px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 99999,
-          background: 'linear-gradient(135deg, #0D3B66, #6C2E7B)',
+          background: reportToast.type === 'error' ? 'linear-gradient(135deg, #BE123C, #881337)' : 'linear-gradient(135deg, #0D3B66, #6C2E7B)',
           color: '#ffffff',
-          padding: '10px 20px',
+          padding: '10px 22px',
           borderRadius: '30px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           fontSize: '13px',
           fontWeight: '700',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          border: '1px solid rgba(255,255,255,0.2)',
+          border: '1px solid rgba(255,255,255,0.25)',
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <span>{toastMessage}</span>
+          <span>{reportToast.msg}</span>
         </div>
       )}
 
@@ -816,8 +969,8 @@ export default function App() {
         onExportDB={handleExportDB}
         isDarkTheme={isDarkTheme}
         onToggleTheme={toggleTheme}
-        onOutlookShare={handleOutlookShare}
-        isCapturing={isCapturingScreenshot}
+        onOutlookShare={handleSendWeeklyReport}
+        isCapturing={isGeneratingReport ? 'capturing' : null}
       />
 
       <div className="app-container">
@@ -828,8 +981,8 @@ export default function App() {
           onResetFilters={() => setFilters({ week: '', month: '', frt: '', plan: '' })}
           onOpenMapping={() => setIsMapModalOpen(true)}
           isMappingDisabled={headers.length === 0}
-          onOutlookShare={handleOutlookShare}
-          isCapturing={isCapturingScreenshot}
+          onSendWeeklyReport={handleSendWeeklyReport}
+          isGeneratingReport={isGeneratingReport}
         />
 
         {/* ROW 1: 3 KPI Cards */}
@@ -1111,8 +1264,22 @@ export default function App() {
                         <span>DC LOCATIONS MAP</span>
                         <span id="lbl-route-total">{toLacs(depotTotalFrt)}</span>
                       </div>
-                      <div id="chart-depot-map" style={{ position: 'relative', width: '100%', height: '100%' }}>
-                        <svg className="depot-net-svg-stage" style={{ position: 'relative', zIndex: 1 }} viewBox="0 0 1200 960" preserveAspectRatio="xMidYMid meet">
+                      <div id="chart-depot-map" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+                        <img 
+                          src={southIndiaMapBase64} 
+                          alt="South India Map" 
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: '8.33%',
+                            width: '83.33%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                          }}
+                        />
+                        <svg className="depot-net-svg-stage" style={{ position: 'relative', zIndex: 1, background: 'transparent' }} viewBox="0 0 1200 960" preserveAspectRatio="xMidYMid meet">
                           <defs>
                             <radialGradient id="hubRadarGlow" cx="50%" cy="50%" r="50%">
                               <stop offset="0%" stopColor="#6C2E7B" stopOpacity="0.45"/>
@@ -1138,10 +1305,6 @@ export default function App() {
                             <text x="0" y="-16" textAnchor="middle" fill="#6C2E7B" fontSize="9" fontWeight="900">N</text>
                           </g>
 
-                          {/* AUTHENTIC ENLARGED SOUTH INDIA MAP */}
-                          <g className="map-states-layer">
-                            <image href={southIndiaMapBase64} xlinkHref={southIndiaMapBase64} x="100" y="0" width="1000" height="960" preserveAspectRatio="xMidYMid meet"/>
-                          </g>
 
                           {/* Central Bangalore Hub Radar Waves */}
                           <circle cx="415" cy="565" r="85" fill="url(#hubRadarGlow)"/>
@@ -1339,42 +1502,18 @@ export default function App() {
                                 </linearGradient>
                               </defs>
 
-                              {/* Layer 0: Ground Shadow under the 3D Pie */}
-                              <ellipse cx="85" cy="100" rx="66" ry="24" fill="rgba(13, 59, 102, 0.22)" filter="url(#pieGroundBlur)" />
-
-                              {/* Main 3D Pie Chart Group with Depth (Rotated -90deg so slices start at top) */}
-                              <g transform="rotate(-90 85 78)" filter="url(#pie3dShadow)">
-                                {/* Layer 1: 3D Cylinder Bottom Extrusion Steps (dy: 7..1) */}
-                                {[7, 6, 5, 4, 3, 2, 1].map(dy => (
-                                  <g key={`depth-step-${dy}`}>
-                                    {computedSlices.map(s => (
-                                      <circle
-                                        key={`depth-${dy}-${s.item.name}-${s.idx}`}
-                                        cx="85"
-                                        cy={78 + dy}
-                                        r={dRadius}
-                                        fill="transparent"
-                                        stroke={s.color}
-                                        strokeWidth={28}
-                                        strokeDasharray={s.strokeDash}
-                                        strokeDashoffset={`-${s.offset.toFixed(2)}`}
-                                        style={{ filter: 'brightness(0.60) saturate(1.25)' }}
-                                      />
-                                    ))}
-                                  </g>
-                                ))}
-
-                                {/* Layer 2: 3D Top Face Slices */}
+                              {/* Straight Upright Circular Donut Ring (Rotated from top 12 o'clock) */}
+                              <g transform="rotate(-90 85 85)" filter="url(#pie3dShadow)">
                                 {computedSlices.map(s => (
                                   <circle
                                     key={`top-${s.item.name}-${s.idx}`}
                                     className="donut-segment"
                                     cx="85"
-                                    cy="78"
+                                    cy="85"
                                     r={dRadius}
                                     fill="transparent"
-                                    stroke={`url(#pieGrad${s.idx % 7})`}
-                                    strokeWidth={28}
+                                    stroke={s.color}
+                                    strokeWidth={26}
                                     strokeDasharray={s.strokeDash}
                                     strokeDashoffset={`-${s.offset.toFixed(2)}`}
                                     onMouseEnter={() => setDonutHover({ ...s.item, color: s.color, share: s.itemShare })}
@@ -1382,39 +1521,22 @@ export default function App() {
                                     data-tip={`<b>${s.item.name}</b><br/>Freight: ₹ ${toLacs(s.item.v)} (${pct(s.itemShare)})`}
                                   />
                                 ))}
-
-                                {/* Layer 3: 3D Specular Highlight Ring */}
-                                <circle
-                                  cx="85"
-                                  cy="78"
-                                  r={dRadius}
-                                  fill="transparent"
-                                  stroke="url(#pieSpecularTop)"
-                                  strokeWidth={28}
-                                  pointerEvents="none"
-                                  style={{ mixBlendMode: 'overlay', opacity: 0.40 }}
-                                />
                               </g>
 
-                              {/* Layer 4: Raised 3D Center Hub / Pill (Upright 0deg, No Rotation) */}
-                              <g id="donut-center-hub-group">
-                                {/* Inner depth rim */}
-                                <circle cx="85" cy="81" r="42" fill="rgba(0, 0, 0, 0.16)" />
-
-                                {/* 3D Raised Center Card */}
+                              {/* Straight Upright Center Hub */}
+                              <g filter="url(#centerHubShadow)">
                                 <circle
                                   cx="85"
-                                  cy="78"
-                                  r="41"
+                                  cy="85"
+                                  r="40"
                                   fill="var(--card)"
                                   stroke="var(--line)"
                                   strokeWidth="1.4"
-                                  filter="url(#centerHubShadow)"
                                   id="donut-center-svg-bg"
                                 />
                                 <text
                                   x="85"
-                                  y="74"
+                                  y="81"
                                   textAnchor="middle"
                                   fontSize="14.5"
                                   fontWeight="900"
@@ -1427,14 +1549,14 @@ export default function App() {
                                 </text>
                                 <text
                                   x="85"
-                                  y="91"
+                                  y="95"
                                   textAnchor="middle"
-                                  fontSize="7"
+                                  fontSize="7.5"
                                   fontWeight="800"
                                   fill={donutHover ? donutHover.color : 'var(--ink-sub)'}
                                   id="donut-lbl-text"
                                   fontFamily="system-ui, -apple-system, sans-serif"
-                                  letterSpacing="0.1"
+                                  letterSpacing="0.2"
                                   style={{ transition: 'all .15s' }}
                                 >
                                   {donutHover ? `${donutHover.name} (${pct(donutHover.share)})` : 'TOTAL FRT'}
@@ -1475,10 +1597,6 @@ export default function App() {
                 <div className="split-pane" style={{ height: '100%', padding: 0, position: 'relative', overflow: 'hidden' }}>
                   <div className="split-lbl" style={{ padding: '4px 6px 2px 6px', marginBottom: 0, zIndex: 10, position: 'relative', background: 'var(--card-sub)', borderBottom: '1px solid var(--line)' }}>
                     <span style={{ fontWeight: 800 }}>ROUTE TYPE - CATEGORY</span>
-                    <span className="hdr-legend-group">
-                      <span className="hdr-leg-item" style={{ color: '#008779', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#008779' }}></span>▲ Planned (Above)</span>
-                      <span className="hdr-leg-item" style={{ color: '#0C2366', fontWeight: 900 }}><span className="leg-color-box" style={{ background: '#0C2366' }}></span>▼ Unplanned (Below)</span>
-                    </span>
                     <span id="lbl-cat-week-total" style={{ fontWeight: 900, color: '#0F172A', fontSize: '13px' }}>{toLacs(iceTotalAll)}</span>
                   </div>
                   <div className="iceberg-stage-container" id="chart-cat-week-list">
@@ -1490,104 +1608,34 @@ export default function App() {
                       <>
                         {/* LEFT COLUMN: REALISTIC FLOATING ICEBERG GRAPHIC */}
                         <div className="iceberg-left-stage" style={{ position: 'relative', overflow: 'hidden' }}>
-                          <svg className="iceberg-left-svg" style={{ position: 'relative', zIndex: 1 }} viewBox="0 0 380 500" preserveAspectRatio="none">
+                          <img
+                            src={icebergBase64}
+                            alt="Iceberg"
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'fill',
+                              pointerEvents: 'none',
+                              zIndex: 0
+                            }}
+                          />
+                          <svg className="iceberg-left-svg" viewBox="0 0 380 500" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, background: 'transparent' }}>
                             <defs>
                               <filter id="iceCardShadow" x="-15%" y="-15%" width="130%" height="140%">
                                 <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#0D3B66" floodOpacity="0.20"/>
                                 <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0D3B66" floodOpacity="0.10"/>
                               </filter>
-                              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="1"/>
-                                <stop offset="100%" stopColor="#D2EEF9" stopOpacity="1"/>
-                              </linearGradient>
-                              <linearGradient id="oceanDeepGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#0284C7" stopOpacity="0.35"/>
-                                <stop offset="35%" stopColor="#0369A1" stopOpacity="0.65"/>
-                                <stop offset="75%" stopColor="#082F49" stopOpacity="0.95"/>
-                                <stop offset="100%" stopColor="#021526" stopOpacity="1"/>
-                              </linearGradient>
-                              <linearGradient id="oceanMidWaveGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.55"/>
-                                <stop offset="40%" stopColor="#0284C7" stopOpacity="0.45"/>
-                                <stop offset="100%" stopColor="#0369A1" stopOpacity="0.7"/>
-                              </linearGradient>
-                              <linearGradient id="oceanForeWaveGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#7DD3FC" stopOpacity="0.45"/>
-                                <stop offset="50%" stopColor="#0284C7" stopOpacity="0.35"/>
-                                <stop offset="100%" stopColor="#082F49" stopOpacity="0.6"/>
-                              </linearGradient>
                               <linearGradient id="waveFoamGrad" x1="0" y1="0" x2="1" y2="0">
                                 <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85"/>
                                 <stop offset="50%" stopColor="#74EBD5" stopOpacity="0.65"/>
                                 <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.85"/>
                               </linearGradient>
-                              <linearGradient id="sunbeam1" x1="0.5" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
-                                <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
-                              </linearGradient>
-                              <linearGradient id="sunbeam2" x1="0.5" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.35"/>
-                                <stop offset="100%" stopColor="#0284C7" stopOpacity="0"/>
-                              </linearGradient>
-                              <clipPath id="iceLeftStageClip">
-                                <rect x="0" y="0" width="380" height="500"/>
-                              </clipPath>
-                              <mask id="icebergEdgeFadeMask">
-                                <linearGradient id="iceFadeGrad" x1="0" y1="0" x2="1" y2="0">
-                                  <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
-                                  <stop offset="82%" stopColor="#FFFFFF" stopOpacity="1"/>
-                                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
-                                </linearGradient>
-                                <rect x="0" y="0" width="380" height="500" fill="url(#iceFadeGrad)"/>
-                              </mask>
                             </defs>
 
-                            {/* Sky Atmosphere */}
-                            <rect x="0" y="0" width="380" height="240" fill="url(#skyGrad)"/>
-                            <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)"/>
-
-                            {/* Underwater Light Refraction Caustics & Sunbeams */}
-                            <g className="sea-caustics">
-                              <polygon points="190,240 40,500 140,500" fill="url(#sunbeam1)"/>
-                              <polygon points="190,240 220,500 320,500" fill="url(#sunbeam2)"/>
-                            </g>
-
-                            {/* Layer 1: Background Deep Moving Wave */}
                             <g className="sea-waves-container">
-                              <path
-                                className="sea-wave-back"
-                                d="M -100 240 C -40 240, 20 248, 80 240 C 140 240, 200 248, 260 240 C 320 240, 380 248, 440 240 L 440 500 L -100 500 Z"
-                                fill="url(#oceanDeepGrad)"
-                              />
-                            </g>
-
-                            {/* FLOATING REALISTIC ICEBERG */}
-                            <g className="ice-float-hero">
-                              <g clipPath="url(#iceLeftStageClip)" mask="url(#icebergEdgeFadeMask)">
-                                <image href={icebergBase64} xlinkHref={icebergBase64} x="0" y="0" width="380" height="500" preserveAspectRatio="none"/>
-                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)" opacity="0.85" style={{ mixBlendMode: 'color' }}/>
-                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanDeepGrad)" opacity="0.55" style={{ mixBlendMode: 'overlay' }}/>
-                                <rect x="0" y="240" width="380" height="260" fill="#0284C7" opacity="0.35" style={{ mixBlendMode: 'screen' }}/>
-                                <rect x="0" y="240" width="380" height="260" fill="url(#oceanMidWaveGrad)" opacity="0.45" style={{ mixBlendMode: 'soft-light' }}/>
-                              </g>
-                            </g>
-
-                            {/* Layer 2: Mid-ground Translucent Rolling Waves */}
-                            <g className="sea-waves-container">
-                              <path
-                                className="sea-wave-mid"
-                                d="M -100 240 C -40 246, 20 240, 80 240 C 140 246, 200 240, 260 240 C 320 246, 380 240, 440 240 L 440 500 L -100 500 Z"
-                                fill="url(#oceanMidWaveGrad)"
-                              />
-                            </g>
-
-                            {/* Layer 3: Foreground Waving Ocean Foam */}
-                            <g className="sea-waves-container">
-                              <path
-                                className="sea-wave-fore"
-                                d="M -100 242 C -30 240, 40 250, 110 242 C 180 240, 250 250, 320 242 C 390 240, 460 250, 530 242 L 530 500 L -100 500 Z"
-                                fill="url(#oceanForeWaveGrad)"
-                              />
                               <path
                                 className="sea-wave-surface-line"
                                 d="M -100 240 C -30 240, 40 245, 110 240 C 180 240, 250 245, 320 240 C 390 240, 460 245, 530 240"
@@ -1612,7 +1660,13 @@ export default function App() {
                           {/* BOTTOM-RIGHT HERO CARD: UNPLANNED (Pure HTML/CSS - 0% compression, 100% normal fonts) */}
                           <div 
                             className="ice-hero-html-card unplanned"
-                            data-tip={`<b>▼ ROUTE TYPE: UNPLANNED (SUBMERGED ICEBERG)</b><br/>Unplanned Total: ₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
+                            onClick={() => {
+                              setSelectedUnplannedCategory(null);
+                              setIsUnplannedModalOpen(true);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                            title="Click to view category-wise unplanned route breakdown"
+                            data-tip={`<b>▼ ROUTE TYPE: UNPLANNED (SUBMERGED ICEBERG)</b><br/>Unplanned Total: ₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips<br/><span style="color:#60A5FA; font-weight:900;">Click to view route-wise cost breakdown</span>`}
                           >
                             <span className="hero-tag unplanned">▼ UNPLANNED</span>
                             <span className="hero-main-val">₹ {toLacs(iceUnplannedCost)}</span>
@@ -1626,7 +1680,13 @@ export default function App() {
                           <div className="ice-cat-header-bar">
                             <div 
                               className="ice-header-pill-card unplanned"
-                              data-tip={`<b>▼ TOTAL UNPLANNED FREIGHT</b><br/>₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips`}
+                              onClick={() => {
+                                setSelectedUnplannedCategory(null);
+                                setIsUnplannedModalOpen(true);
+                              }}
+                              style={{ cursor: 'pointer' }}
+                              title="Click to view category-wise unplanned route breakdown"
+                              data-tip={`<b>▼ TOTAL UNPLANNED FREIGHT</b><br/>₹ ${toLacs(iceUnplannedCost)} (${iceUnplanPct}%)<br/>Volume: ${inIN(iceUnplannedCSE)} CSE &bull; ${toTons(iceUnplannedWt)}<br/>Trips: ${iceUnplannedTrips} Trips<br/><span style="color:#60A5FA; font-weight:900;">Click to view route-wise cost breakdown</span>`}
                             >
                               <span className="hdr-tag"><span style={{ color: '#0C2366', fontSize: '9px' }}>▼</span> UNPLANNED</span>
                               <span className="hdr-cost">₹ {toLacs(iceUnplannedCost)}</span>
@@ -1657,10 +1717,18 @@ export default function App() {
                                 <div 
                                   key={cat.name} 
                                   className="ice-cat-item-row"
-                                  data-tip={`<b>📦 ${cat.name}</b><br/>Total Freight: ₹ ${toLacs(cat.totalCost)}<br/><span style="color:#2563EB">▼ Unplanned (Left): ₹ ${toLacs(cat.unplannedCost)} (${unplanRatio}%)</span><br/><span style="color:#008779">▲ Planned (Right): ₹ ${toLacs(cat.plannedCost)} (${planRatio}%)</span><br/>Volume: ${inIN(cat.cse)} CSE &bull; ${toTons(cat.weight)}<br/>Trips: ${cat.trips} Trips`}
+                                  data-tip={`<b>${cat.name}</b><br/>Total Freight: ₹ ${toLacs(cat.totalCost)}<br/><span style="color:#2563EB">▼ Unplanned (Left): ₹ ${toLacs(cat.unplannedCost)} (${unplanRatio}%)</span><br/><span style="color:#008779">▲ Planned (Right): ₹ ${toLacs(cat.plannedCost)} (${planRatio}%)</span><br/>Volume: ${inIN(cat.cse)} CSE &bull; ${toTons(cat.weight)}<br/>Trips: ${cat.trips} Trips<br/><span style="color:#60A5FA; font-weight:900;">Click unplanned bar for route cost breakdown</span>`}
                                 >
                                   {/* Left: Unplanned (Value hugs left tip of bar) */}
-                                  <div className="ice-row-side-unplan">
+                                  <div 
+                                    className="ice-row-side-unplan"
+                                    onClick={() => {
+                                      setSelectedUnplannedCategory(cat.name);
+                                      setIsUnplannedModalOpen(true);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                    title={`Click to view unplanned routes breakdown for ${cat.name}`}
+                                  >
                                     {cat.unplannedCost > 0 && (
                                       <>
                                         <span className="side-val">₹ {toLacs(cat.unplannedCost)}</span>
@@ -1808,6 +1876,25 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Unplanned Route Freight Cost Breakdown Modal (Floating Screen with Blurred Background) */}
+      <UnplannedRoutesModal
+        isOpen={isUnplannedModalOpen}
+        onClose={() => setIsUnplannedModalOpen(false)}
+        rows={mainRows}
+        initialCategory={selectedUnplannedCategory}
+      />
+
+      {/* Outlook Classic Executive Weekly Report Modal (Complete 6 Tables & Analyst Insights) */}
+      <WeeklyReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        reportData={activeReportData}
+        richHtml={reportHtml}
+        plainText={reportPlainText}
+        screenshotImage={activeScreenshot}
+        onOpenOutlookAgain={handleOpenOutlookAgain}
+      />
 
       {/* Instant 0ms Zero-Delay Floating HTML Tooltip */}
       <InstantTooltip />

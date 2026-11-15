@@ -12,7 +12,7 @@ const VIBRANT_PALETTES = [
 ];
 
 function aggregate(rows, keyName, valName) {
-  const m = new Map();
+  const m = new Map();ww22wsz
   let total = 0;
   for (const r of rows) {
     const k = r[keyName] || '(blank)';
