@@ -12,7 +12,9 @@ export default function SidebarDrawer({
   onClearHistory,
   onExportDB,
   isDarkTheme,
-  onToggleTheme
+  onToggleTheme,
+  onOutlookShare,
+  isCapturing
 }) {
   return (
     <>
@@ -47,7 +49,7 @@ export default function SidebarDrawer({
         </div>
 
         <div className="sidebar-body">
-          {/* Quick Actions: Upload XL & Theme Toggle */}
+          {/* Quick Actions: Upload XL, Theme Toggle, Outlook Share */}
           <div className="sidebar-section-title">Quick Actions</div>
           <div className="sidebar-actions-grid">
             <label className="btn-sidebar-action upload" htmlFor="sidebar-file-input">
@@ -75,6 +77,24 @@ export default function SidebarDrawer({
             >
               <span className="theme-dot"></span>
               <span id="sidebarThemeBtnText">{isDarkTheme ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+
+            <button 
+              className="btn-sidebar-action" 
+              id="sidebarOutlookBtn" 
+              type="button" 
+              title="Capture full page screenshot & open Outlook compose" 
+              style={{ gridColumn: 'span 2' }}
+              onClick={onOutlookShare}
+              disabled={Boolean(isCapturing)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+              <span>
+                {isCapturing === 'capturing' ? 'Capturing Screenshot...' : isCapturing === 'copied' ? 'Copied! Opening Outlook...' : 'Email Dashboard (Outlook)'}
+              </span>
             </button>
           </div>
 
