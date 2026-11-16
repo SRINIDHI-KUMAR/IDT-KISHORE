@@ -483,7 +483,7 @@ export function buildRichHtmlEmail(data) {
   const { meta, categoryTable, weekTable, weekTotals, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
 
   const fontStack = `font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;`;
-  const tableWrap = `width: 100%; border-collapse: collapse; margin-bottom: 16px; background-color: #FFFFFF; border: 1px solid #CBD5E1; ${fontStack} mso-table-lspace: 0pt; mso-table-rspace: 0pt;`;
+  const tableWrap = `width: 100%; border-collapse: collapse; margin: 0; background-color: #FFFFFF; border: 1px solid #CBD5E1; ${fontStack} mso-table-lspace: 0pt; mso-table-rspace: 0pt;`;
   
   const thNavy = `background-color: #0D3B66; color: #FFFFFF; ${fontStack} font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border: 1px solid #0D3B66; line-height: 1.3; text-align: left;`;
   const thNavyRight = `${thNavy} text-align: right;`;
@@ -494,10 +494,17 @@ export function buildRichHtmlEmail(data) {
 
   const tdBase = `${fontStack} font-size: 11px; padding: 5px 8px; border: 1px solid #E2E8F0; vertical-align: middle; line-height: 1.35;`;
 
-  const makeHeading = (title, color = '#0D3B66') => `
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 16px 0 6px 0;">
+  const makeSpacer = (height = 20) => `
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
       <tr>
-        <td style="border-left: 3.5px solid ${color}; padding-left: 8px; ${fontStack} font-size: 12.5px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.3px;">
+        <td height="${height}" style="height: ${height}px; font-size: ${height}px; line-height: ${height}px; mso-line-height-rule: exactly; padding: 0; margin: 0; border: none;">&nbsp;</td>
+      </tr>
+    </table>`;
+
+  const makeHeading = (title, color = '#0D3B66') => `
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+      <tr>
+        <td style="border-left: 3.5px solid ${color}; padding-left: 8px; padding-top: 2px; padding-bottom: 2px; ${fontStack} font-size: 12px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.2;">
           ${title}
         </td>
       </tr>
@@ -533,7 +540,7 @@ export function buildRichHtmlEmail(data) {
           </div>
 
           <!-- EXECUTIVE KPI STRIP -->
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 18px; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 0; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
             <tr>
               <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
                 <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL FREIGHT SPEND</div>
@@ -558,8 +565,11 @@ export function buildRichHtmlEmail(data) {
             </tr>
           </table>
 
+          ${makeSpacer(24)}
+
           <!-- 1. CATEGORY-WISE FREIGHT COST CONTRIBUTION -->
           ${makeHeading('1. CATEGORY-WISE FREIGHT COST CONTRIBUTION')}
+          ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -597,8 +607,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
+          ${makeSpacer(24)}
+
           <!-- 2. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST) -->
           ${makeHeading('2. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST)')}
+          ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -636,8 +649,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
+          ${makeSpacer(24)}
+
           <!-- 3. DISTRIBUTION CENTER (DC-WISE) FREIGHT ALLOCATION -->
           ${makeHeading('3. DISTRIBUTION CENTER (DC-WISE) FREIGHT ALLOCATION')}
+          ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -666,8 +682,43 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          <!-- 4. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES) -->
-          ${makeHeading('4. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES)')}
+          ${makeSpacer(24)}
+
+          <!-- 4. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY -->
+          ${makeHeading('4. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY')}
+          ${makeSpacer(6)}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="22%" style="${thNavy}">PLANNING STATUS</th>
+                <th width="15%" style="${thNavyRight}">FREIGHT SPEND</th>
+                <th width="13%" style="${thNavyRight}">SPEND SHARE</th>
+                <th width="16%" style="${thNavyRight}">VOLUME (CSE)</th>
+                <th width="16%" style="${thNavyRight}">WEIGHT (MT)</th>
+                <th width="18%" style="${thNavyRight}">TRIPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${planningSummary.map((p, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                const isPl = p.status === 'Planned';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg};">${p.status} Transfers</td>
+                  <td style="${tdBase} font-weight: 800; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg}; text-align: right;">${p.costLacs}</td>
+                  <td style="${tdBase} font-weight: 700; color: #1E293B; background-color: ${bg}; text-align: right;">${p.sharePct}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(p.volumeCSE)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.weightMT}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.trips}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+
+          ${makeSpacer(24)}
+
+          <!-- 5. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES) -->
+          ${makeHeading('5. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES)')}
+          ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -696,39 +747,16 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          <!-- 5. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY -->
-          ${makeHeading('5. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY')}
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
-            <thead>
-              <tr>
-                <th width="22%" style="${thNavy}">PLANNING STATUS</th>
-                <th width="15%" style="${thNavyRight}">FREIGHT SPEND</th>
-                <th width="13%" style="${thNavyRight}">SPEND SHARE</th>
-                <th width="16%" style="${thNavyRight}">VOLUME (CSE)</th>
-                <th width="16%" style="${thNavyRight}">WEIGHT (MT)</th>
-                <th width="18%" style="${thNavyRight}">TRIPS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${planningSummary.map((p, i) => {
-                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
-                const isPl = p.status === 'Planned';
-                return `<tr>
-                  <td style="${tdBase} font-weight: 700; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg};">${p.status} Transfers</td>
-                  <td style="${tdBase} font-weight: 800; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg}; text-align: right;">${p.costLacs}</td>
-                  <td style="${tdBase} font-weight: 700; color: #1E293B; background-color: ${bg}; text-align: right;">${p.sharePct}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(p.volumeCSE)}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.weightMT}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.trips}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
+          ${makeSpacer(16)}
 
-          <!-- Sub-table: Category Unplanned Breakdown -->
-          <div style="${fontStack} font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 8px 0 4px 2px;">
-            Unplanned Spend Breakdown By Category:
-          </div>
+          <!-- Sub-table: Unplanned Spend Breakdown By Category -->
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td style="padding-left: 2px; padding-bottom: 6px; ${fontStack} font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.3px;">
+                Unplanned Spend Breakdown By Category:
+              </td>
+            </tr>
+          </table>
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -753,11 +781,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
+          ${makeSpacer(24)}
+
           <!-- 6. CO-PACK TRANSFER VOLUME & FREIGHT COST SAVINGS ANALYSIS -->
           ${makeHeading('6. CO-PACK TRANSFER VOLUME & FREIGHT COST SAVINGS ANALYSIS', '#047857')}
-          <p style="${fontStack} font-size: 11px; color: #475569; margin: 0 0 8px 0; line-height: 1.4;">
-            Co-pack transfers represent secondary depot manufacturing relocations executed at zero direct linehaul freight expenditure to our primary logistics ledger. Savings are calculated against equivalent contracted commercial primary linehaul rates.
-          </p>
+          ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -793,16 +821,12 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          <!-- SECTION 7: SENIOR ANALYST STRATEGIC INSIGHTS & RECOMMENDATIONS (COMPACT/SMALLER) -->
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 16px 0 6px 0;">
-            <tr>
-              <td style="border-left: 3.5px solid #0D3B66; padding-left: 8px; ${fontStack} font-size: 11.5px; font-weight: 800; color: #0D3B66; text-transform: uppercase; letter-spacing: 0.3px;">
-                7. Senior Logistics Analyst Strategic Insights &amp; Recommendations
-              </td>
-            </tr>
-          </table>
+          ${makeSpacer(24)}
 
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 14px; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
+          <!-- 7. SENIOR LOGISTICS ANALYST STRATEGIC INSIGHTS & RECOMMENDATIONS -->
+          ${makeHeading('7. SENIOR LOGISTICS ANALYST STRATEGIC INSIGHTS & RECOMMENDATIONS')}
+          ${makeSpacer(6)}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 0; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack} mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
               <td style="padding: 10px 12px; ${fontStack}">
                 ${recommendations.map((r, i) => `
@@ -820,12 +844,7 @@ export function buildRichHtmlEmail(data) {
             </tr>
           </table>
 
-          <!-- SIGN-OFF -->
-          <div style="${fontStack} font-size: 10.5px; color: #64748B; border-top: 1px solid #E2E8F0; padding-top: 10px; line-height: 1.4;">
-            Best regards,<br/>
-            <strong style="color: #334155;">Logistics Operations &amp; Supply Chain Analytics Team</strong><br/>
-            Inter-Depot Transfer (IDT) Control Tower
-          </div>
+          ${makeSpacer(16)}
 
         </td>
       </tr>
@@ -889,27 +908,27 @@ export function buildPlainTextEmail(data) {
   });
   txt += '\n';
 
-  // 4. Top 6 Unplanned Routes
+  // 4. Planned vs Unplanned Summary
   txt += bar;
-  txt += `4. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES)\n`;
-  txt += bar;
-  txt += `Rank | Unplanned Corridor            | Cost (L)     | Share % | Trips | Tonnage   | Categories\n`;
-  txt += subBar;
-  top6RoutesTable.forEach(r => {
-    txt += `#${r.rank}   | ${r.corridor.padEnd(29)} | ${r.costLacs.padStart(12)} | ${r.sharePct.padStart(7)} | ${String(r.trips).padStart(5)} | ${r.weightMT.padStart(9)} | ${r.topCategories}\n`;
-  });
-  txt += '\n';
-
-  // 5. Unplanned Summary
-  txt += bar;
-  txt += `5. ROUTE PLANNING ADHERENCE: PLANNED VS UNPLANNED SUMMARY\n`;
+  txt += `4. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY\n`;
   txt += bar;
   txt += `Status    | Freight Cost | Share % | Volume (CSE) | Weight (MT) | Trips\n`;
   txt += subBar;
   planningSummary.forEach(p => {
     txt += `${p.status.padEnd(9)} | ${p.costLacs.padStart(12)} | ${p.sharePct.padStart(7)} | ${inIN(p.volumeCSE).padStart(12)} | ${p.weightMT.padStart(11)} | ${String(p.trips).padStart(5)}\n`;
   });
-  txt += `\nUnplanned Category Breakdown:\n`;
+  txt += '\n';
+
+  // 5. Top 6 Unplanned Routes & Unplanned Spend Breakdown By Category
+  txt += bar;
+  txt += `5. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES)\n`;
+  txt += bar;
+  txt += `Rank | Unplanned Corridor            | Cost (L)     | Share % | Trips | Tonnage   | Categories\n`;
+  txt += subBar;
+  top6RoutesTable.forEach(r => {
+    txt += `#${r.rank}   | ${r.corridor.padEnd(29)} | ${r.costLacs.padStart(12)} | ${r.sharePct.padStart(7)} | ${String(r.trips).padStart(5)} | ${r.weightMT.padStart(9)} | ${r.topCategories}\n`;
+  });
+  txt += `\nUnplanned Spend Breakdown By Category:\n`;
   catUnplanTable.forEach(c => {
     txt += `• ${c.category.padEnd(15)}: ${c.unplanCostLacs} (${c.shareOfUnplan} of unplanned, ${c.trips} trips) -> Top: ${c.topCorridor}\n`;
   });
@@ -936,11 +955,6 @@ export function buildPlainTextEmail(data) {
     txt += `Finding: ${r.finding}\n`;
     txt += `Action : ${r.action}\n`;
   });
-
-  txt += `\n${subBar}`;
-  txt += `Best regards,\n`;
-  txt += `Logistics Operations & Supply Chain Analytics Team\n`;
-  txt += `Inter-Depot Transfer (IDT) Control Tower\n`;
 
   return txt;
 }
@@ -1041,26 +1055,10 @@ export async function exportWeeklyReportToExcel(reportData) {
   XLSX.utils.book_append_sheet(wb, ws3, 'DC Freight Allocation');
 
   // --------------------------------------------------------------------------
-  // SHEET 4: Top 6 Major Unplanned Route Corridors (Across All Categories)
-  // --------------------------------------------------------------------------
-  const sheet4Data = (top6RoutesTable || []).map(r => ({
-    'Rank': `#${r.rank}`,
-    'Unplanned Corridor (From → To)': r.corridor,
-    'Freight Cost': r.costLacs,
-    'Unplanned Share %': r.sharePct,
-    'Trips': r.trips,
-    'Tonnage': r.weightMT,
-    'Primary Categories': r.topCategories
-  }));
-  const ws4 = XLSX.utils.json_to_sheet(sheet4Data);
-  applyColWidths(ws4, sheet4Data);
-  XLSX.utils.book_append_sheet(wb, ws4, 'Top 6 Unplanned Corridors');
-
-  // --------------------------------------------------------------------------
-  // SHEET 5: Route Planning Status: Planned vs Unplanned Freight Summary
+  // SHEET 4: Route Planning Status: Planned vs Unplanned Freight Summary
   //          and Unplanned Spend Breakdown By Category
   // --------------------------------------------------------------------------
-  const sheet5AOA = [
+  const sheet4AOA = [
     ['ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY'],
     ['Planning Status', 'Freight Spend', 'Spend Share', 'Volume (CSE)', 'Weight (MT)', 'Trips'],
     ...(planningSummary || []).map(p => [
@@ -1082,9 +1080,25 @@ export async function exportWeeklyReportToExcel(reportData) {
       c.topCorridor
     ])
   ];
-  const ws5 = XLSX.utils.aoa_to_sheet(sheet5AOA);
-  ws5['!cols'] = [{ wch: 32 }, { wch: 18 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 32 }];
-  XLSX.utils.book_append_sheet(wb, ws5, 'Planned vs Unplanned');
+  const ws4 = XLSX.utils.aoa_to_sheet(sheet4AOA);
+  ws4['!cols'] = [{ wch: 32 }, { wch: 18 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 32 }];
+  XLSX.utils.book_append_sheet(wb, ws4, 'Planned vs Unplanned');
+
+  // --------------------------------------------------------------------------
+  // SHEET 5: Top 6 Major Unplanned Route Corridors (Across All Categories)
+  // --------------------------------------------------------------------------
+  const sheet5Data = (top6RoutesTable || []).map(r => ({
+    'Rank': `#${r.rank}`,
+    'Unplanned Corridor (From → To)': r.corridor,
+    'Freight Cost': r.costLacs,
+    'Unplanned Share %': r.sharePct,
+    'Trips': r.trips,
+    'Tonnage': r.weightMT,
+    'Primary Categories': r.topCategories
+  }));
+  const ws5 = XLSX.utils.json_to_sheet(sheet5Data);
+  applyColWidths(ws5, sheet5Data);
+  XLSX.utils.book_append_sheet(wb, ws5, 'Top 6 Unplanned Corridors');
 
   // --------------------------------------------------------------------------
   // SHEET 6: Co-Pack Transfer Volume & Freight Cost Savings Analysis
