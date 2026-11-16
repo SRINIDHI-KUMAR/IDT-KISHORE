@@ -10,16 +10,30 @@
  * 7. Actionable Senior Analyst Strategic Recommendations
  */
 
-import { inIN, toLacs, toTons, pct } from './formatters';
+import { inIN, toLacs, toTons, pct } from './formatters.js';
 
 export function buildWeeklyReportData({
   mainRows = [],
   copackRows = [],
+  allRows = [],
   filters = {}
 }) {
   const isUnplan = (r) => {
     const t = (r.routeType || '').toString().toLowerCase();
     return t.includes('unplan') || t === '0';
+  };
+
+  const formatWeek = (val) => {
+    if (!val) return 'Week 1';
+    const s = String(val).trim();
+    const l = s.toLowerCase();
+    if (l === 'w1' || l === 'week 1' || l === 'wk 1') return 'Week 1';
+    if (l === 'w2' || l === 'week 2' || l === 'wk 2') return 'Week 2';
+    if (l === 'w3' || l === 'week 3' || l === 'wk 3') return 'Week 3';
+    if (l === 'w4' || l === 'week 4' || l === 'wk 4') return 'Week 4';
+    if (l === 'w5' || l === 'week 5' || l === 'wk 5') return 'Week 5';
+    if (l === 'w6' || l === 'week 6' || l === 'wk 6') return 'Week 6';
+    return s.startsWith('W') && !s.toLowerCase().startsWith('week') ? `Week ${s.slice(1)}` : s;
   };
 
   // 1. High-Level Aggregates
@@ -87,9 +101,27 @@ export function buildWeeklyReportData({
   // -------------------------------------------------------------
   // TABLE 2: Vehicle Sourcing Model: Dedicated vs Market Hire (Week-Wise)
   // -------------------------------------------------------------
+  const rowsForWeek = (allRows && allRows.length > 0)
+    ? allRows.filter(r => (!filters.month || r.month === filters.month) && r.frtCategory !== 'Co-pack')
+    : mainRows.filter(r => r.frtCategory !== 'Co-pack');
+
   const weekMap = new Map();
-  mainRows.forEach(r => {
-    const wk = (r.week || 'W1').trim();
+  // Pre-populate standard weeks so all weeks are always represented in sequence
+  ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'].forEach(wk => {
+    weekMap.set(wk, {
+      week: wk,
+      dedCost: 0,
+      mktCost: 0,
+      totalCost: 0,
+      cse: 0,
+      weightKg: 0,
+      tripsSet: new Set()
+    });
+  });
+
+  rowsForWeek.forEach(r => {
+    const rawWk = r.weekType || r.week;
+    const wk = formatWeek(rawWk);
     if (!weekMap.has(wk)) {
       weekMap.set(wk, {
         week: wk,
@@ -114,12 +146,14 @@ export function buildWeeklyReportData({
     if (r.lr) w.tripsSet.add(r.lr);
   });
 
-  const weekOrder = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'W1', 'W2', 'W3', 'W4', 'W5'];
+  const weekOrder = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'];
   const weekTable = Array.from(weekMap.values())
     .sort((a, b) => {
       const idxA = weekOrder.indexOf(a.week);
       const idxB = weekOrder.indexOf(b.week);
       if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
       return a.week.localeCompare(b.week);
     })
     .map(w => {
@@ -132,9 +166,31 @@ export function buildWeeklyReportData({
         mktShare,
         cse: w.cse,
         weightMT: (w.weightKg / 1000).toFixed(1) + ' MT',
-        trips: w.tripsSet.size
+        trips: w.tripsSet.size,
+        dedCostRaw: w.dedCost,
+        mktCostRaw: w.mktCost,
+        totalCostRaw: w.totalCost,
+        weightKgRaw: w.weightKg
       };
     });
+
+  const weekTotals = {
+    dedCost: weekTable.reduce((a, w) => a + (w.dedCostRaw || 0), 0),
+    mktCost: weekTable.reduce((a, w) => a + (w.mktCostRaw || 0), 0),
+    totalCost: weekTable.reduce((a, w) => a + (w.totalCostRaw || 0), 0),
+    cse: weekTable.reduce((a, w) => a + (w.cse || 0), 0),
+    weightKg: weekTable.reduce((a, w) => a + (w.weightKgRaw || 0), 0),
+    trips: weekTable.reduce((a, w) => a + (w.trips || 0), 0)
+  };
+  const weekTotalsFormatted = {
+    dedCostLacs: (weekTotals.dedCost / 100000).toFixed(2) + ' L',
+    mktCostLacs: (weekTotals.mktCost / 100000).toFixed(2) + ' L',
+    totalCostLacs: (weekTotals.totalCost / 100000).toFixed(2) + ' L',
+    mktShare: weekTotals.totalCost > 0 ? ((weekTotals.mktCost / weekTotals.totalCost) * 100).toFixed(1) + '%' : '0.0%',
+    cse: weekTotals.cse,
+    weightMT: (weekTotals.weightKg / 1000).toFixed(1) + ' MT',
+    trips: weekTotals.trips
+  };
 
   // -------------------------------------------------------------
   // TABLE 3: Destination Distribution Center (DC-Wise) Cost
@@ -410,6 +466,7 @@ export function buildWeeklyReportData({
     },
     categoryTable,
     weekTable,
+    weekTotals: weekTotalsFormatted,
     dcTable,
     top6RoutesTable,
     planningSummary,
@@ -423,7 +480,7 @@ export function buildWeeklyReportData({
  * Builds professional, inline-styled rich HTML email body
  */
 export function buildRichHtmlEmail(data) {
-  const { meta, categoryTable, weekTable, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
+  const { meta, categoryTable, weekTable, weekTotals, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
 
   const fontStack = `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;`;
   const thStyle = `background: #0D3B66; color: #FFFFFF; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 10px; border: 1px solid #0D3B66; text-align: left;`;
@@ -450,12 +507,6 @@ export function buildRichHtmlEmail(data) {
         <strong>Reporting Scope:</strong> ${meta.monthLabel} &bull; ${meta.weekLabel} &nbsp;|&nbsp; <strong>Generated:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
       </div>
     </div>
-
-    <!-- OPENING STATEMENT -->
-    <p style="font-size: 13px; color: #334155; margin-bottom: 16px;">
-      Dear Mentor / Supply Chain Leadership Team,<br/><br/>
-      Please find below the consolidated Inter-Depot Transfer (IDT) logistics performance report. This review outlines category spend allocations, dedicated vs. market fleet behavior, distribution center throughput, top corridor freight concentrations, and co-pack cost avoidance, concluding with high-confidence analyst recommendations.
-    </p>
 
     <!-- EXECUTIVE KPI STRIP -->
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px; background: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px;">
@@ -556,12 +607,12 @@ export function buildRichHtmlEmail(data) {
           `).join('')}
           <tr style="background: #F1F5F9; font-weight: 800;">
             <td style="${tdStyle} font-weight: 800;">Full Period Total</td>
-            <td style="${tdRight} font-weight: 800;">${meta.dedCostLacs}</td>
-            <td style="${tdRight} font-weight: 800; color: #BE123C;">${meta.mktCostLacs}</td>
-            <td style="${tdRight} font-weight: 900; color: #0D3B66;">${meta.totalCostLacs}</td>
-            <td style="${tdRight} font-weight: 800;">—</td>
-            <td style="${tdRight} font-weight: 800;">${inIN(meta.totalCSE)}</td>
-            <td style="${tdRight} font-weight: 800;">${meta.totalWeightMT}</td>
+            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.dedCostLacs) || meta.dedCostLacs}</td>
+            <td style="${tdRight} font-weight: 800; color: #BE123C;">${(weekTotals && weekTotals.mktCostLacs) || meta.mktCostLacs}</td>
+            <td style="${tdRight} font-weight: 900; color: #0D3B66;">${(weekTotals && weekTotals.totalCostLacs) || meta.totalCostLacs}</td>
+            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.mktShare) || meta.mktSharePct || '—'}</td>
+            <td style="${tdRight} font-weight: 800;">${inIN((weekTotals && weekTotals.cse) ?? meta.totalCSE)}</td>
+            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.weightMT) || meta.totalWeightMT}</td>
           </tr>
         </tbody>
       </table>
@@ -706,14 +757,13 @@ export function buildRichHtmlEmail(data) {
             <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Shipped Volume (CSE)</th>
             <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Co-Pack Weight (MT)</th>
             <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Trips</th>
-            <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Benchmark Baseline Rate</th>
             <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Freight Cost Saved</th>
           </tr>
         </thead>
         <tbody>
           ${copackTable.length === 0 ? `
             <tr>
-              <td colspan="6" style="${tdStyle} text-align: center; color: #94A3B8;">No Co-pack records in selected scope</td>
+              <td colspan="5" style="${tdStyle} text-align: center; color: #94A3B8;">No Co-pack records in selected scope</td>
             </tr>
           ` : copackTable.map((c, i) => `
             <tr style="${i % 2 === 1 ? trAlt : ''}">
@@ -721,7 +771,6 @@ export function buildRichHtmlEmail(data) {
               <td style="${tdRight}">${inIN(c.cse)}</td>
               <td style="${tdRight}">${c.weightMT}</td>
               <td style="${tdRight}">${c.trips}</td>
-              <td style="${tdRight}">${inIN(c.benchmarkRate)} / MT</td>
               <td style="${tdRight} font-weight: 900; color: #047857; background: #ECFDF5;">${c.savedCostLacs}</td>
             </tr>
           `).join('')}
@@ -730,7 +779,6 @@ export function buildRichHtmlEmail(data) {
             <td style="${tdRight} font-weight: 800; color: #047857;">${inIN(meta.totalCopackCSE || 0)}</td>
             <td style="${tdRight} font-weight: 800; color: #047857;">${meta.totalCopackMT}</td>
             <td style="${tdRight} font-weight: 800; color: #047857;">${meta.totalCopackTrips || 0}</td>
-            <td style="${tdRight} font-weight: 800; color: #047857;">Direct Cost Incurred = 0</td>
             <td style="${tdRight} font-weight: 900; color: #047857; font-size: 13px;">${meta.totalSavingsLacs} Saved</td>
           </tr>
         </tbody>
@@ -772,15 +820,12 @@ export function buildRichHtmlEmail(data) {
  * Builds formatted plain text / markdown tables for native email clients and mailto links
  */
 export function buildPlainTextEmail(data) {
-  const { meta, categoryTable, weekTable, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
+  const { meta, categoryTable, weekTable, weekTotals, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
 
   const bar = '========================================================================================\n';
   const subBar = '----------------------------------------------------------------------------------------\n';
 
   let txt = `Subject: ${meta.subject}\n\n`;
-  txt += `Dear Mentor / Supply Chain Leadership Team,\n\n`;
-  txt += `Please find below the senior supply chain analyst weekly review of Inter-Depot Transfer (IDT)\n`;
-  txt += `freight logistics performance, vehicle allocation, corridor economics, and co-pack savings.\n\n`;
 
   txt += bar;
   txt += `EXECUTIVE HIGHLIGHTS (${meta.monthLabel} | ${meta.weekLabel})\n`;
@@ -812,7 +857,7 @@ export function buildPlainTextEmail(data) {
     txt += `${w.week.padEnd(7)} | ${w.dedCostLacs.padStart(14)} | ${w.mktCostLacs.padStart(16)} | ${w.totalCostLacs.padStart(14)} | ${w.mktShare.padStart(8)} | ${inIN(w.cse).padStart(12)}\n`;
   });
   txt += subBar;
-  txt += `TOTAL   | ${meta.dedCostLacs.padStart(14)} | ${meta.mktCostLacs.padStart(16)} | ${meta.totalCostLacs.padStart(14)} |          | ${inIN(meta.totalCSE).padStart(12)}\n\n`;
+  txt += `TOTAL   | ${(weekTotals?.dedCostLacs || meta.dedCostLacs).padStart(14)} | ${(weekTotals?.mktCostLacs || meta.mktCostLacs).padStart(16)} | ${(weekTotals?.totalCostLacs || meta.totalCostLacs).padStart(14)} | ${(weekTotals?.mktShare || '').padStart(8)} | ${inIN(weekTotals?.cse ?? meta.totalCSE).padStart(12)}\n\n`;
 
   // 3. DC Wise
   txt += bar;
@@ -855,13 +900,13 @@ export function buildPlainTextEmail(data) {
   txt += bar;
   txt += `6. CO-PACK TRANSFER VOLUME & FREIGHT COST SAVINGS ANALYSIS\n`;
   txt += bar;
-  txt += `Category          | Shipped (CSE) | Weight (MT) | Trips | Baseline Rate | Freight Saved (L)\n`;
+  txt += `Category          | Shipped (CSE) | Weight (MT) | Trips | Freight Saved (L)\n`;
   txt += subBar;
   copackTable.forEach(c => {
-    txt += `${c.category.padEnd(17)} | ${inIN(c.cse).padStart(13)} | ${c.weightMT.padStart(11)} | ${String(c.trips).padStart(5)} | ${inIN(c.benchmarkRate).padStart(10)}/MT | ${c.savedCostLacs.padStart(17)}\n`;
+    txt += `${c.category.padEnd(17)} | ${inIN(c.cse).padStart(13)} | ${c.weightMT.padStart(11)} | ${String(c.trips).padStart(5)} | ${c.savedCostLacs.padStart(17)}\n`;
   });
   txt += subBar;
-  txt += `TOTAL CO-PACK     | ${inIN(meta.totalCopackCSE || copackTable.reduce((a,c)=>a+c.cse, 0)).padStart(13)} | ${(meta.totalCopackMT || '').padStart(11)} | ${String(meta.totalCopackTrips || 0).padStart(5)} | Direct Cost=0 | ${(meta.totalSavingsLacs || '').padStart(17)}\n\n`;
+  txt += `TOTAL CO-PACK     | ${inIN(meta.totalCopackCSE || copackTable.reduce((a,c)=>a+c.cse, 0)).padStart(13)} | ${(meta.totalCopackMT || '').padStart(11)} | ${String(meta.totalCopackTrips || 0).padStart(5)} | ${(meta.totalSavingsLacs || '').padStart(17)}\n\n`;
 
   // 7. Analyst Recommendations
   txt += bar;
@@ -888,7 +933,7 @@ export function buildPlainTextEmail(data) {
 export async function exportWeeklyReportToExcel(reportData) {
   if (!reportData) return;
   const XLSX = await import('xlsx');
-  const { meta, categoryTable, weekTable, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable } = reportData;
+  const { meta, categoryTable, weekTable, weekTotals, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable } = reportData;
 
   const wb = XLSX.utils.book_new();
 
@@ -944,15 +989,16 @@ export async function exportWeeklyReportToExcel(reportData) {
     'Tonnage (MT)': w.weightMT,
     'Trips': w.trips
   }));
+  const wt = weekTotals || {};
   sheet2Data.push({
     'Timeline': 'Full Period Total',
-    'Dedicated Spend': meta?.dedCostLacs || '',
-    'Market Hire Spend': meta?.mktCostLacs || '',
-    'Total Freight': meta?.totalCostLacs || '',
-    'Market Hire %': '—',
-    'Volume (CSE)': meta?.totalCSE || 0,
-    'Tonnage (MT)': meta?.totalWeightMT || '',
-    'Trips': meta?.totalTrips || 0
+    'Dedicated Spend': wt.dedCostLacs || meta?.dedCostLacs || '',
+    'Market Hire Spend': wt.mktCostLacs || meta?.mktCostLacs || '',
+    'Total Freight': wt.totalCostLacs || meta?.totalCostLacs || '',
+    'Market Hire %': wt.mktShare || '—',
+    'Volume (CSE)': wt.cse ?? meta?.totalCSE ?? 0,
+    'Tonnage (MT)': wt.weightMT || meta?.totalWeightMT || '',
+    'Trips': wt.trips ?? meta?.totalTrips ?? 0
   });
   const ws2 = XLSX.utils.json_to_sheet(sheet2Data);
   applyColWidths(ws2, sheet2Data);
@@ -1029,7 +1075,6 @@ export async function exportWeeklyReportToExcel(reportData) {
     'Shipped Volume (CSE)': c.cse,
     'Co-Pack Weight (MT)': c.weightMT,
     'Trips': c.trips,
-    'Benchmark Baseline Rate': `${c.benchmarkRate} / MT`,
     'Freight Cost Saved': c.savedCostLacs
   }));
   sheet6Data.push({
@@ -1037,7 +1082,6 @@ export async function exportWeeklyReportToExcel(reportData) {
     'Shipped Volume (CSE)': meta?.totalCopackCSE || 0,
     'Co-Pack Weight (MT)': meta?.totalCopackMT || '',
     'Trips': meta?.totalCopackTrips || 0,
-    'Benchmark Baseline Rate': 'Direct Cost Incurred = 0',
     'Freight Cost Saved': `${meta?.totalSavingsLacs || '0.00 L'} Saved`
   });
   const ws6 = XLSX.utils.json_to_sheet(sheet6Data);

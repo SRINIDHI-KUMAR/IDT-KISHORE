@@ -784,12 +784,13 @@ export default function App() {
     try {
       setIsSidebarOpen(false);
       setIsGeneratingReport(true);
-      setReportToast({ type: 'info', msg: '📸 Capturing dashboard screenshot (SS) & launching Outlook Classic...' });
+      setReportToast({ type: 'info', msg: '📨 Generating weekly logistics report & launching Outlook Classic...' });
 
-      // 1. Calculate and build full analyst report dataset with 6 tables + recommendations
+      // 1. Calculate and build full analyst report dataset with 6 tables (including all weeks in Table 2)
       const reportData = buildWeeklyReportData({
         mainRows,
         copackRows,
+        allRows: rows,
         filters
       });
       const htmlBody = buildRichHtmlEmail(reportData);
@@ -799,55 +800,26 @@ export default function App() {
       setReportHtml(htmlBody);
       setReportPlainText(plainTextBody);
 
-      // Brief delay to allow sidebar drawer animation to finish closing before screenshot capture
-      await new Promise(res => setTimeout(res, 200));
-
-      // 2. Capture screenshot of dashboard
-      let imageBase64 = null;
-      try {
-        const dashboardEl = document.querySelector('.app-container') || document.body;
-        if (dashboardEl) {
-          const canvas = await html2canvas(dashboardEl, {
-            useCORS: true,
-            allowTaint: false,
-            scale: 1.25,
-            logging: false,
-            ignoreElements: (el) => el.classList?.contains('leaflet-control-container')
-          });
-          try {
-            imageBase64 = canvas.toDataURL('image/png');
-            setActiveScreenshot(imageBase64);
-          } catch (tErr) {
-            console.warn('toDataURL warning:', tErr);
-          }
-
-          // Place screenshot image directly onto browser clipboard if supported
-          if (navigator.clipboard && window.ClipboardItem) {
-            canvas.toBlob(async (blob) => {
-              if (blob) {
-                try {
-                  await navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': blob })
-                  ]);
-                } catch (clipErr) {
-                  console.warn('Browser clipboard write info:', clipErr);
-                }
-              }
-            }, 'image/png');
-          }
+      // Copy rich HTML tables directly to system clipboard for easy manual pasting
+      if (navigator.clipboard && window.ClipboardItem) {
+        try {
+          const blobHtml = new Blob([htmlBody], { type: 'text/html' });
+          const blobText = new Blob([plainTextBody], { type: 'text/plain' });
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
+          ]);
+        } catch (clipErr) {
+          console.warn('Browser clipboard write info:', clipErr);
         }
-      } catch (cvErr) {
-        console.warn('html2canvas screenshot capture fallback:', cvErr);
       }
 
-      // 3. Trigger backend automation to take native screenshot, launch Outlook Classic & paste SS
+      // 2. Trigger backend automation to launch Outlook Classic with formatted tables in draft body (no SS)
       let backendSuccess = false;
       try {
         const resp = await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            image_base64: imageBase64,
             subject: reportData.meta.subject,
             html_body: htmlBody,
             text_body: plainTextBody
@@ -860,17 +832,21 @@ export default function App() {
           const resp2 = await fetch('http://127.0.0.1:5005/api/trigger-screenshot-and-outlook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: imageBase64 })
+            body: JSON.stringify({
+              subject: reportData.meta.subject,
+              html_body: htmlBody,
+              text_body: plainTextBody
+            })
           });
           if (resp2.ok) backendSuccess = true;
         } catch (e2) {}
       }
 
-      // 4. Open executive report preview modal and display confirmation toast
+      // 3. Open executive report preview modal and display confirmation toast
       setIsReportModalOpen(true);
       setReportToast({
         type: 'success',
-        msg: '✅ Outlook Classic invoked! Screenshot (SS) captured & pasted into email body.'
+        msg: '✅ Outlook Classic opened! Weekly logistics tables drafted directly into email body.'
       });
 
       setTimeout(() => {
@@ -889,31 +865,10 @@ export default function App() {
   const handleOpenOutlookAgain = async () => {
     if (!activeReportData) return;
     try {
-      let imageBase64 = null;
-      try {
-        const dashboardEl = document.querySelector('.app-container') || document.body;
-        if (dashboardEl) {
-          const canvas = await html2canvas(dashboardEl, {
-            useCORS: true,
-            allowTaint: false,
-            scale: 1.25,
-            logging: false,
-            ignoreElements: (el) => el.classList?.contains('leaflet-control-container')
-          });
-          try {
-            imageBase64 = canvas.toDataURL('image/png');
-            setActiveScreenshot(imageBase64);
-          } catch (tErr) {
-            console.warn('toDataURL warning:', tErr);
-          }
-        }
-      } catch (e) {}
-
       await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_base64: imageBase64,
           subject: activeReportData.meta.subject,
           html_body: reportHtml,
           text_body: reportPlainText
@@ -921,7 +876,7 @@ export default function App() {
       });
       setReportToast({
         type: 'success',
-        msg: '✅ Outlook Classic invoked! Screenshot (SS) pasted into compose window.'
+        msg: '✅ Outlook Classic draft created with weekly logistics tables.'
       });
       setTimeout(() => setReportToast(null), 5000);
     } catch (e) {
@@ -1892,7 +1847,6 @@ export default function App() {
         reportData={activeReportData}
         richHtml={reportHtml}
         plainText={reportPlainText}
-        screenshotImage={activeScreenshot}
         onOpenOutlookAgain={handleOpenOutlookAgain}
       />
 

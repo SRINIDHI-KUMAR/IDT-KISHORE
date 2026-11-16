@@ -132,46 +132,27 @@ def save_screenshot_image(image_base64: Optional[str] = None) -> str:
 
     return file_path
 
-def execute_open_outlook_draft(subject: str, screenshot_path: str, html_body: Optional[str] = None, text_body: Optional[str] = None):
+def execute_open_outlook_draft(subject: str, html_body: Optional[str] = None, text_body: Optional[str] = None):
     """
-    Opens Outlook Classic and creates a new email draft with the screenshot attached and displayed on the UI.
+    Opens Outlook Classic and creates a new email draft with the formatted HTML tables directly in the email body.
+    No screenshot is taken or attached.
     """
-    subject = subject or "[IDT LOGISTICS REPORT] Weekly Freight Performance & Dashboard Summary"
+    subject = subject or "[IDT LOGISTICS REPORT] Weekly Freight Performance & Category Economics"
     opened = False
 
-    # Method 1: Native Windows COM Automation (Directly creates mail, attaches SS, and displays draft)
+    # Method 1: Native Windows COM Automation (Directly creates mail with HTML tables and displays draft)
     try:
         print("[Outlook Task] 1. Initializing Outlook COM automation...")
         ol = win32com.client.dynamic.Dispatch("Outlook.Application")
         mail = ol.CreateItem(0)  # 0 = olMailItem
         mail.Subject = subject
 
-        # Attach the screenshot file to the draft
-        if os.path.isfile(screenshot_path):
-            print(f"[Outlook Task] 2. Attaching screenshot {screenshot_path} to draft...")
-            att = mail.Attachments.Add(os.path.abspath(screenshot_path))
-            try:
-                PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
-                att.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, "dashboard_screenshot")
-            except Exception as prop_err:
-                print(f"[Outlook Task] Content ID property info: {prop_err}")
-
-        # Embed screenshot in HTML body
-        cid_img = '<div style="margin: 16px 0;"><img src="cid:dashboard_screenshot" style="max-width: 920px; width: 100%; border: 1.5px solid #CBD5E1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" alt="IDT Dashboard Screenshot" /></div>'
-        
         if html_body:
-            if "<!-- OPENING STATEMENT -->" in html_body:
-                final_html = html_body.replace("<!-- OPENING STATEMENT -->", f"{cid_img}\n<!-- OPENING STATEMENT -->")
-            elif "<body" in html_body:
-                body_idx = html_body.find(">") + 1
-                final_html = html_body[:body_idx] + f"\n{cid_img}\n" + html_body[body_idx:]
-            else:
-                final_html = f"<html><body>{cid_img}{html_body}</body></html>"
-            mail.HTMLBody = final_html
+            mail.HTMLBody = html_body
         elif text_body:
             mail.Body = text_body
 
-        print("[Outlook Task] 3. Displaying Outlook Classic draft on screen...")
+        print("[Outlook Task] 2. Displaying Outlook Classic draft on screen with tables...")
         mail.Display(False)
         try:
             mail.GetInspector.Activate()
@@ -179,18 +160,18 @@ def execute_open_outlook_draft(subject: str, screenshot_path: str, html_body: Op
             pass
 
         opened = True
-        print("[Success] Outlook Classic automatically opened and draft displayed with attached screenshot!")
+        print("[Success] Outlook Classic automatically opened and draft displayed with weekly logistics tables!")
     except Exception as e:
         print(f"[Outlook Task] COM method info: {e}. Trying executable spawn fallback...")
 
-    # Method 2: Fallback direct spawn via outlook.exe /c ipm.note /a <screenshot_path>
+    # Method 2: Fallback direct spawn via outlook.exe /c ipm.note
     if not opened:
         try:
             exe_path = find_outlook_executable()
-            print(f"[Outlook Task] Spawning: {exe_path} /c ipm.note /a {screenshot_path}")
-            subprocess.Popen([exe_path, '/c', 'ipm.note', '/a', os.path.abspath(screenshot_path)])
+            print(f"[Outlook Task] Spawning: {exe_path} /c ipm.note")
+            subprocess.Popen([exe_path, '/c', 'ipm.note'])
             opened = True
-            print("[Success] Outlook Classic spawned via executable with attachment flag!")
+            print("[Success] Outlook Classic spawned via executable!")
         except Exception as e2:
             print(f"[Error] Failed to spawn Outlook executable: {e2}")
 
@@ -207,21 +188,20 @@ class ReportDraftRequest(BaseModel):
 async def draft_outlook_report(req: ReportDraftRequest):
     """
     Endpoint called when clicking 'Send Weekly Report'.
-    Saves screenshot, opens Outlook Classic, and attaches screenshot to the draft.
+    Opens Outlook Classic and inserts the formatted weekly logistics tables into the draft body.
     """
     try:
         def worker():
             pythoncom.CoInitialize()
             try:
-                ss_path = save_screenshot_image(req.image_base64)
-                execute_open_outlook_draft(req.subject, ss_path, req.html_body, req.text_body)
+                execute_open_outlook_draft(req.subject, req.html_body, req.text_body)
             finally:
                 pythoncom.CoUninitialize()
 
         threading.Thread(target=worker, daemon=True).start()
         return {
             "status": "success",
-            "message": "Outlook Classic draft opened with screenshot attached."
+            "message": "Outlook Classic draft opened with weekly logistics tables in body."
         }
     except Exception as e:
         print(f"[Error] /api/draft-outlook-report: {e}")
@@ -229,23 +209,21 @@ async def draft_outlook_report(req: ReportDraftRequest):
 
 @app.post("/api/trigger-screenshot-and-outlook")
 async def handle_trigger(req: Optional[ReportDraftRequest] = None):
-    img_b64 = req.image_base64 if req else None
-    subj = req.subject if req else "[IDT LOGISTICS REPORT] Weekly Dashboard Performance"
+    subj = req.subject if req else "[IDT LOGISTICS REPORT] Weekly Logistics Performance"
     html_b = req.html_body if req else None
     text_b = req.text_body if req else None
     try:
         def worker():
             pythoncom.CoInitialize()
             try:
-                ss_path = save_screenshot_image(img_b64)
-                execute_open_outlook_draft(subj, ss_path, html_b, text_b)
+                execute_open_outlook_draft(subj, html_b, text_b)
             finally:
                 pythoncom.CoUninitialize()
 
         threading.Thread(target=worker, daemon=True).start()
         return {
             "status": "success",
-            "message": "Outlook Classic draft opened with screenshot attached."
+            "message": "Outlook Classic draft opened with weekly logistics tables in body."
         }
     except Exception as e:
         print(f"[Error] /api/trigger-screenshot-and-outlook: {e}")

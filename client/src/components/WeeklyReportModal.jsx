@@ -7,7 +7,6 @@ export default function WeeklyReportModal({
   reportData,
   richHtml,
   plainText,
-  screenshotImage,
   onOpenOutlookAgain
 }) {
   const [copiedState, setCopiedState] = useState(null);
@@ -134,56 +133,6 @@ export default function WeeklyReportModal({
               ✕
             </button>
           </div>
-        </div>
-
-        {/* ATTACHMENT STRIP ON DRAFT UI */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, rgba(13, 59, 102, 0.05), rgba(4, 120, 87, 0.08))',
-          borderBottom: '1px solid #E2E8F0',
-          padding: '10px 24px',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '18px' }}>📎</span>
-            <div>
-              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>Attached: IDT_Logistics_Weekly_Report.png</span>
-                <span style={{
-                  fontSize: '10px',
-                  fontWeight: '800',
-                  color: '#047857',
-                  background: '#D1FAE5',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
-                  border: '1px solid #A7F3D0'
-                }}>
-                  ✓ Attached to Outlook Classic Draft
-                </span>
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748B' }}>
-                Full-page dashboard screenshot captured & attached automatically to the Outlook email compose
-              </div>
-            </div>
-          </div>
-          {screenshotImage && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <img 
-                src={screenshotImage} 
-                alt="Captured Screenshot Preview" 
-                style={{
-                  height: '38px',
-                  maxWidth: '80px',
-                  objectFit: 'cover',
-                  borderRadius: '4px',
-                  border: '1.5px solid #0D3B66',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                }}
-              />
-            </div>
-          )}
         </div>
 
         {/* TAB SELECTOR */}
