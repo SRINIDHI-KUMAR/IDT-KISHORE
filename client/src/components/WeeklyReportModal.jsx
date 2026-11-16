@@ -11,7 +11,6 @@ export default function WeeklyReportModal({
 }) {
   const [copiedState, setCopiedState] = useState(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'plaintext'
 
   if (!isOpen || !reportData) return null;
 
@@ -77,11 +76,7 @@ export default function WeeklyReportModal({
             <div>
               <div className="report-title-row">
                 <h2 className="report-title">OUTLOOK CLASSIC WEEKLY REPORT DRAFT</h2>
-                <span className="report-status-badge">Ready to Send</span>
               </div>
-              <p className="report-sub">
-                Complete IDT logistics summary with 6 structured tables & senior analyst recommendations
-              </p>
             </div>
           </div>
 
@@ -135,39 +130,19 @@ export default function WeeklyReportModal({
           </div>
         </div>
 
-        {/* TAB SELECTOR */}
+        {/* SUBJECT INFO STRIP */}
         <div className="report-tab-strip">
-          <button 
-            type="button" 
-            className={`report-tab-btn ${activeTab === 'preview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('preview')}
-          >
-            Formatted Email Preview (Tables & Styling)
-          </button>
-          <button 
-            type="button" 
-            className={`report-tab-btn ${activeTab === 'plaintext' ? 'active' : ''}`}
-            onClick={() => setActiveTab('plaintext')}
-          >
-            Plain Text / ASCII Format
-          </button>
-          <div className="report-tab-info">
+          <div className="report-tab-info" style={{ marginLeft: 0 }}>
             Subject: <strong>{reportData.meta.subject}</strong>
           </div>
         </div>
 
-        {/* MODAL CONTENT */}
+        {/* MODAL CONTENT: FORMATTED EMAIL PREVIEW */}
         <div className="weekly-report-content">
-          {activeTab === 'preview' ? (
-            <div 
-              className="report-preview-frame"
-              dangerouslySetInnerHTML={{ __html: richHtml }}
-            />
-          ) : (
-            <pre className="report-plain-pre">
-              {plainText}
-            </pre>
-          )}
+          <div 
+            className="report-preview-frame"
+            dangerouslySetInnerHTML={{ __html: richHtml }}
+          />
         </div>
       </div>
     </div>
