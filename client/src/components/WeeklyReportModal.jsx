@@ -101,23 +101,6 @@ export default function WeeklyReportModal({
               Open Outlook Classic
             </button>
 
-            <button 
-              type="button" 
-              className="report-btn secondary-btn"
-              onClick={handleCopyRich}
-              title="Copy formatted tables to clipboard"
-            >
-              {copiedState === 'rich' ? '✓ Copied Rich HTML!' : '📋 Copy Rich Tables'}
-            </button>
-
-            <button 
-              type="button" 
-              className="report-btn secondary-btn"
-              onClick={handleCopyText}
-              title="Copy plain-text tables"
-            >
-              {copiedState === 'text' ? '✓ Copied Text!' : '📄 Copy Plain Text'}
-            </button>
 
             <button 
               type="button" 
@@ -139,7 +122,7 @@ export default function WeeklyReportModal({
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              <span>{downloadSuccess ? '✓ Downloaded!' : '📊 Download Excel (.xlsx)'}</span>
+              <span>{downloadSuccess ? '✓ Downloaded!' : 'Download'}</span>
             </button>
 
             <button 
