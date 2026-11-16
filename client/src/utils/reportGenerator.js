@@ -482,336 +482,355 @@ export function buildWeeklyReportData({
 export function buildRichHtmlEmail(data) {
   const { meta, categoryTable, weekTable, weekTotals, dcTable, top6RoutesTable, planningSummary, catUnplanTable, copackTable, recommendations } = data;
 
-  const fontStack = `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;`;
-  const thStyle = `background: #0D3B66; color: #FFFFFF; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 10px; border: 1px solid #0D3B66; text-align: left;`;
-  const tdStyle = `font-size: 11.5px; padding: 6px 10px; border: 1px solid #E2E8F0; color: #1E293B; vertical-align: middle;`;
-  const tdRight = `${tdStyle} text-align: right; font-variant-numeric: tabular-nums;`;
-  const tdBold = `${tdStyle} font-weight: 700; color: #0F172A;`;
-  const trAlt = `background: #F8FAFC;`;
-  const tableWrap = `width: 100%; border-collapse: collapse; margin-bottom: 18px; background: #FFFFFF; border: 1px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);`;
+  const fontStack = `font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;`;
+  const tableWrap = `width: 100%; border-collapse: collapse; margin-bottom: 16px; background-color: #FFFFFF; border: 1px solid #CBD5E1; ${fontStack} mso-table-lspace: 0pt; mso-table-rspace: 0pt;`;
+  
+  const thNavy = `background-color: #0D3B66; color: #FFFFFF; ${fontStack} font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border: 1px solid #0D3B66; line-height: 1.3; text-align: left;`;
+  const thNavyRight = `${thNavy} text-align: right;`;
+  const thNavyCenter = `${thNavy} text-align: center;`;
+
+  const thGreen = `background-color: #047857; color: #FFFFFF; ${fontStack} font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border: 1px solid #047857; line-height: 1.3; text-align: left;`;
+  const thGreenRight = `${thGreen} text-align: right;`;
+
+  const tdBase = `${fontStack} font-size: 11px; padding: 5px 8px; border: 1px solid #E2E8F0; vertical-align: middle; line-height: 1.35;`;
+
+  const makeHeading = (title, color = '#0D3B66') => `
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 16px 0 6px 0;">
+      <tr>
+        <td style="border-left: 3.5px solid ${color}; padding-left: 8px; ${fontStack} font-size: 12.5px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.3px;">
+          ${title}
+        </td>
+      </tr>
+    </table>`;
 
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${meta.subject}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, th, div, p, span, h1, h2, h3 { font-family: 'Segoe UI', Arial, sans-serif !important; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  </style>
+  <![endif]-->
 </head>
-<body style="${fontStack} background-color: #F8FAFC; margin: 0; padding: 20px; color: #0F172A; line-height: 1.45;">
-  <div style="max-width: 920px; margin: 0 auto; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-    
-    <!-- HEADER BLOCK -->
-    <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 14px; margin-bottom: 20px;">
-      <div style="font-size: 11px; font-weight: 800; color: #0D3B66; letter-spacing: 1px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
-      <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 4px 0 6px 0;">Weekly Logistics Freight Performance & Executive Summary</h1>
-      <div style="font-size: 12.5px; color: #64748B;">
-        <strong>Reporting Scope:</strong> ${meta.monthLabel} &bull; ${meta.weekLabel} &nbsp;|&nbsp; <strong>Generated:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-      </div>
-    </div>
-
-    <!-- EXECUTIVE KPI STRIP -->
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px; background: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px;">
+<body style="margin: 0; padding: 16px 0; background-color: #F8FAFC; ${fontStack} color: #0F172A; line-height: 1.4;">
+  <center style="width: 100%; table-layout: fixed; background-color: #F8FAFC;">
+    <!-- OUTLOOK STRICT 860px CONTAINER TABLE -->
+    <table role="presentation" width="860" border="0" cellpadding="0" cellspacing="0" align="center" style="width: 860px; max-width: 860px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: left;">
       <tr>
-        <td style="padding: 12px; text-align: center; border-right: 1px solid #E2E8F0;">
-          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">TOTAL FREIGHT SPEND</div>
-          <div style="font-size: 18px; font-weight: 900; color: #0D3B66; margin-top: 2px;">${meta.totalCostLacs}</div>
-          <div style="font-size: 10.5px; color: #64748B;">${inIN(meta.totalCSE)} CSE</div>
-        </td>
-        <td style="padding: 12px; text-align: center; border-right: 1px solid #E2E8F0;">
-          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">TOTAL TONNAGE & TRIPS</div>
-          <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;">${meta.totalWeightMT}</div>
-          <div style="font-size: 10.5px; color: #64748B;">${meta.totalTrips} Total Trips</div>
-        </td>
-        <td style="padding: 12px; text-align: center; border-right: 1px solid #E2E8F0;">
-          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">DEDICATED VS MARKET</div>
-          <div style="font-size: 15px; font-weight: 900; color: #0F172A; margin-top: 4px;">${meta.dedCostLacs} <span style="font-size: 11px; color:#64748B;">/</span> ${meta.mktCostLacs}</div>
-          <div style="font-size: 10.5px; color: #DC2626; font-weight: 600;">Market Dominant</div>
-        </td>
-        <td style="padding: 12px; text-align: center; background: #ECFDF5;">
-          <div style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase;">CO-PACK SAVINGS</div>
-          <div style="font-size: 18px; font-weight: 900; color: #047857; margin-top: 2px;">${meta.totalSavingsLacs}</div>
-          <div style="font-size: 10.5px; color: #059669; font-weight: 700;">${meta.totalCopackMT} Shipped</div>
+        <td style="padding: 22px 24px; ${fontStack}">
+          
+          <!-- HEADER BLOCK -->
+          <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 12px; margin-bottom: 18px;">
+            <div style="${fontStack} font-size: 11px; font-weight: 800; color: #0D3B66; letter-spacing: 0.8px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
+            <h1 style="${fontStack} font-size: 20px; font-weight: 800; color: #0F172A; margin: 4px 0 6px 0; line-height: 1.25;">Weekly Logistics Freight Performance &amp; Executive Summary</h1>
+            <div style="${fontStack} font-size: 12px; color: #64748B;">
+              <strong>Reporting Scope:</strong> ${meta.monthLabel} &bull; ${meta.weekLabel} &nbsp;|&nbsp; <strong>Generated:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </div>
+          </div>
+
+          <!-- EXECUTIVE KPI STRIP -->
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 18px; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
+            <tr>
+              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL FREIGHT SPEND</div>
+                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #0D3B66; margin: 2px 0;">${meta.totalCostLacs}</div>
+                <div style="${fontStack} font-size: 10px; color: #64748B;">${inIN(meta.totalCSE)} CSE</div>
+              </td>
+              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL TONNAGE &amp; TRIPS</div>
+                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #0F172A; margin: 2px 0;">${meta.totalWeightMT}</div>
+                <div style="${fontStack} font-size: 10px; color: #64748B;">${meta.totalTrips} Total Trips</div>
+              </td>
+              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">DEDICATED VS MARKET</div>
+                <div style="${fontStack} font-size: 15px; font-weight: 900; color: #0F172A; margin: 3px 0 2px 0;">${meta.dedCostLacs} <span style="font-size: 11px; color:#64748B;">/</span> ${meta.mktCostLacs}</div>
+                <div style="${fontStack} font-size: 10px; color: #DC2626; font-weight: 700;">Market Dominant</div>
+              </td>
+              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; background-color: #ECFDF5; vertical-align: middle;">
+                <div style="${fontStack} font-size: 9.5px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">CO-PACK SAVINGS</div>
+                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #047857; margin: 2px 0;">${meta.totalSavingsLacs}</div>
+                <div style="${fontStack} font-size: 10px; color: #059669; font-weight: 700;">${meta.totalCopackMT} Shipped</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- 1. CATEGORY-WISE FREIGHT COST CONTRIBUTION -->
+          ${makeHeading('1. CATEGORY-WISE FREIGHT COST CONTRIBUTION')}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="22%" style="${thNavy}">CATEGORY</th>
+                <th width="13%" style="${thNavyRight}">FREIGHT COST</th>
+                <th width="11%" style="${thNavyRight}">SPEND SHARE</th>
+                <th width="14%" style="${thNavyRight}">VOLUME (CSE)</th>
+                <th width="14%" style="${thNavyRight}">WEIGHT (MT)</th>
+                <th width="10%" style="${thNavyRight}">TRIPS</th>
+                <th width="16%" style="${thNavyRight}">RATE / MT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${categoryTable.map((c, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${c.category}</td>
+                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right; font-variant-numeric: tabular-nums;">${c.costLacs}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.sharePct}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(c.cse)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.weightMT}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.trips}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(c.ratePerMT)}</td>
+                </tr>`;
+              }).join('')}
+              <tr style="background-color: #F1F5F9; font-weight: 800;">
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9;">Total Paid Operations</td>
+                <td style="${tdBase} font-weight: 900; color: #0D3B66; background-color: #F1F5F9; text-align: right;">${meta.totalCostLacs}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">100.0%</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${inIN(meta.totalCSE)}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${meta.totalWeightMT}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${meta.totalTrips}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 2. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST) -->
+          ${makeHeading('2. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST)')}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="15%" style="${thNavy}">TIMELINE</th>
+                <th width="14%" style="${thNavyRight}">DEDICATED SPEND</th>
+                <th width="15%" style="${thNavyRight}">MARKET HIRE SPEND</th>
+                <th width="15%" style="${thNavyRight}">TOTAL FREIGHT</th>
+                <th width="13%" style="${thNavyRight}">MARKET HIRE %</th>
+                <th width="14%" style="${thNavyRight}">VOLUME (CSE)</th>
+                <th width="14%" style="${thNavyRight}">TONNAGE</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${weekTable.map((w, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${w.week}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${w.dedCostLacs}</td>
+                  <td style="${tdBase} font-weight: 700; color: #BE123C; background-color: ${bg}; text-align: right;">${w.mktCostLacs}</td>
+                  <td style="${tdBase} font-weight: 800; color: #0D3B66; background-color: ${bg}; text-align: right;">${w.totalCostLacs}</td>
+                  <td style="${tdBase} font-weight: 700; color: ${parseFloat(w.mktShare) > 70 ? '#BE123C' : '#0F172A'}; background-color: ${bg}; text-align: right;">${w.mktShare}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(w.cse)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${w.weightMT}</td>
+                </tr>`;
+              }).join('')}
+              <tr style="background-color: #F1F5F9; font-weight: 800;">
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9;">Full Period Total</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${(weekTotals && weekTotals.dedCostLacs) || meta.dedCostLacs}</td>
+                <td style="${tdBase} font-weight: 800; color: #BE123C; background-color: #F1F5F9; text-align: right;">${(weekTotals && weekTotals.mktCostLacs) || meta.mktCostLacs}</td>
+                <td style="${tdBase} font-weight: 900; color: #0D3B66; background-color: #F1F5F9; text-align: right;">${(weekTotals && weekTotals.totalCostLacs) || meta.totalCostLacs}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${(weekTotals && weekTotals.mktShare) || meta.mktSharePct || '—'}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${inIN((weekTotals && weekTotals.cse) ?? meta.totalCSE)}</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${(weekTotals && weekTotals.weightMT) || meta.totalWeightMT}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 3. DISTRIBUTION CENTER (DC-WISE) FREIGHT ALLOCATION -->
+          ${makeHeading('3. DISTRIBUTION CENTER (DC-WISE) FREIGHT ALLOCATION')}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="20%" style="${thNavy}">DESTINATION DC / DEPOT</th>
+                <th width="13%" style="${thNavyRight}">FREIGHT COST</th>
+                <th width="11%" style="${thNavyRight}">SPEND SHARE</th>
+                <th width="14%" style="${thNavyRight}">VOLUME (CSE)</th>
+                <th width="14%" style="${thNavyRight}">TONNAGE (MT)</th>
+                <th width="9%" style="${thNavyRight}">TRIPS</th>
+                <th width="19%" style="${thNavy}">KEY INBOUND ORIGIN(S)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dcTable.slice(0, 8).map((d, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${d.dc}</td>
+                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right;">${d.costLacs}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.sharePct}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(d.cse)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.weightMT}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.trips}</td>
+                  <td style="${tdBase} font-size: 10.5px; color: #475569; background-color: ${bg};">${d.primaryOrigin}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- 4. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES) -->
+          ${makeHeading('4. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS (ALL CATEGORIES)')}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="6%" style="${thNavyCenter}">RANK</th>
+                <th width="28%" style="${thNavy}">UNPLANNED CORRIDOR (FROM → TO)</th>
+                <th width="13%" style="${thNavyRight}">FREIGHT COST</th>
+                <th width="13%" style="${thNavyRight}">UNPLANNED SHARE</th>
+                <th width="9%" style="${thNavyRight}">TRIPS</th>
+                <th width="12%" style="${thNavyRight}">TONNAGE</th>
+                <th width="19%" style="${thNavy}">PRIMARY CATEGORIES</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${top6RoutesTable.map((r, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} text-align: center; font-weight: 800; color: #0D3B66; background-color: ${bg};">#${r.rank}</td>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${r.corridor}</td>
+                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right;">${r.costLacs}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${r.sharePct}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${r.trips}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${r.weightMT}</td>
+                  <td style="${tdBase} font-size: 10.5px; color: #475569; background-color: ${bg};">${r.topCategories}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- 5. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY -->
+          ${makeHeading('5. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY')}
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="22%" style="${thNavy}">PLANNING STATUS</th>
+                <th width="15%" style="${thNavyRight}">FREIGHT SPEND</th>
+                <th width="13%" style="${thNavyRight}">SPEND SHARE</th>
+                <th width="16%" style="${thNavyRight}">VOLUME (CSE)</th>
+                <th width="16%" style="${thNavyRight}">WEIGHT (MT)</th>
+                <th width="18%" style="${thNavyRight}">TRIPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${planningSummary.map((p, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                const isPl = p.status === 'Planned';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg};">${p.status} Transfers</td>
+                  <td style="${tdBase} font-weight: 800; color: ${isPl ? '#047857' : '#0D3B66'}; background-color: ${bg}; text-align: right;">${p.costLacs}</td>
+                  <td style="${tdBase} font-weight: 700; color: #1E293B; background-color: ${bg}; text-align: right;">${p.sharePct}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(p.volumeCSE)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.weightMT}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${p.trips}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- Sub-table: Category Unplanned Breakdown -->
+          <div style="${fontStack} font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 8px 0 4px 2px;">
+            Unplanned Spend Breakdown By Category:
+          </div>
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="25%" style="${thNavy}">CATEGORY</th>
+                <th width="15%" style="${thNavyRight}">UNPLANNED COST</th>
+                <th width="18%" style="${thNavyRight}">% OF UNPLANNED</th>
+                <th width="12%" style="${thNavyRight}">TRIPS</th>
+                <th width="30%" style="${thNavy}">PRIMARY UNPLANNED CORRIDOR</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${catUnplanTable.map((c, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${c.category}</td>
+                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right;">${c.unplanCostLacs}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.shareOfUnplan}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.trips}</td>
+                  <td style="${tdBase} font-size: 10.5px; color: #475569; background-color: ${bg};">${c.topCorridor}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- 6. CO-PACK TRANSFER VOLUME & FREIGHT COST SAVINGS ANALYSIS -->
+          ${makeHeading('6. CO-PACK TRANSFER VOLUME & FREIGHT COST SAVINGS ANALYSIS', '#047857')}
+          <p style="${fontStack} font-size: 11px; color: #475569; margin: 0 0 8px 0; line-height: 1.4;">
+            Co-pack transfers represent secondary depot manufacturing relocations executed at zero direct linehaul freight expenditure to our primary logistics ledger. Savings are calculated against equivalent contracted commercial primary linehaul rates.
+          </p>
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
+            <thead>
+              <tr>
+                <th width="26%" style="${thGreen}">CATEGORY</th>
+                <th width="18%" style="${thGreenRight}">SHIPPED VOLUME (CSE)</th>
+                <th width="18%" style="${thGreenRight}">CO-PACK WEIGHT (MT)</th>
+                <th width="12%" style="${thGreenRight}">TRIPS</th>
+                <th width="26%" style="${thGreenRight}">FREIGHT COST SAVED</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${copackTable.length === 0 ? `
+                <tr>
+                  <td colspan="5" style="${tdBase} text-align: center; color: #94A3B8; background-color: #FFFFFF;">No Co-pack records in selected scope</td>
+                </tr>
+              ` : copackTable.map((c, i) => {
+                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
+                return `<tr>
+                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${c.category}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(c.cse)}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.weightMT}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.trips}</td>
+                  <td style="${tdBase} font-weight: 900; color: #047857; background-color: #ECFDF5; text-align: right;">${c.savedCostLacs}</td>
+                </tr>`;
+              }).join('')}
+              <tr style="background-color: #D1FAE5; font-weight: 800;">
+                <td style="${tdBase} font-weight: 800; color: #047857; background-color: #D1FAE5;">Total Co-Pack Value Added</td>
+                <td style="${tdBase} font-weight: 800; color: #047857; background-color: #D1FAE5; text-align: right;">${inIN(meta.totalCopackCSE || 0)}</td>
+                <td style="${tdBase} font-weight: 800; color: #047857; background-color: #D1FAE5; text-align: right;">${meta.totalCopackMT}</td>
+                <td style="${tdBase} font-weight: 800; color: #047857; background-color: #D1FAE5; text-align: right;">${meta.totalCopackTrips || 0}</td>
+                <td style="${tdBase} font-weight: 900; color: #047857; background-color: #D1FAE5; text-align: right; font-size: 12px;">${meta.totalSavingsLacs} Saved</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- SECTION 7: SENIOR ANALYST STRATEGIC INSIGHTS & RECOMMENDATIONS (COMPACT/SMALLER) -->
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 16px 0 6px 0;">
+            <tr>
+              <td style="border-left: 3.5px solid #0D3B66; padding-left: 8px; ${fontStack} font-size: 11.5px; font-weight: 800; color: #0D3B66; text-transform: uppercase; letter-spacing: 0.3px;">
+                7. Senior Logistics Analyst Strategic Insights &amp; Recommendations
+              </td>
+            </tr>
+          </table>
+
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 14px; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
+            <tr>
+              <td style="padding: 10px 12px; ${fontStack}">
+                ${recommendations.map((r, i) => `
+                  <div style="margin-bottom: ${i === recommendations.length - 1 ? '0' : '6px'}; padding-bottom: ${i === recommendations.length - 1 ? '0' : '6px'}; ${i === recommendations.length - 1 ? '' : 'border-bottom: 1px solid #E2E8F0;'}">
+                    <div style="${fontStack} font-size: 11px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0;">${r.title}</div>
+                    <div style="${fontStack} font-size: 10px; color: #475569; margin: 0 0 3px 0; line-height: 1.35;">
+                      <strong style="color: #334155;">Data Finding:</strong> ${r.finding}
+                    </div>
+                    <div style="${fontStack} font-size: 10px; color: #0D3B66; background-color: #FFFFFF; padding: 4px 8px; border-radius: 3px; border-left: 2.5px solid #0D3B66; line-height: 1.35;">
+                      <strong>Actionable Recommendation:</strong> ${r.action}
+                    </div>
+                  </div>
+                `).join('')}
+              </td>
+            </tr>
+          </table>
+
+          <!-- SIGN-OFF -->
+          <div style="${fontStack} font-size: 10.5px; color: #64748B; border-top: 1px solid #E2E8F0; padding-top: 10px; line-height: 1.4;">
+            Best regards,<br/>
+            <strong style="color: #334155;">Logistics Operations &amp; Supply Chain Analytics Team</strong><br/>
+            Inter-Depot Transfer (IDT) Control Tower
+          </div>
+
         </td>
       </tr>
     </table>
-
-    <!-- TABLE 1: Category-Wise Cost Contribution -->
-    <div style="margin-bottom: 22px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #0D3B66; margin: 0 0 6px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        1. Category-Wise Freight Cost Contribution
-      </h3>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle}">Category</th>
-            <th style="${thStyle} text-align: right;">Freight Cost</th>
-            <th style="${thStyle} text-align: right;">Spend Share</th>
-            <th style="${thStyle} text-align: right;">Volume (CSE)</th>
-            <th style="${thStyle} text-align: right;">Weight (MT)</th>
-            <th style="${thStyle} text-align: right;">Trips</th>
-            <th style="${thStyle} text-align: right;">Rate / MT</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${categoryTable.map((c, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold}">${c.category}</td>
-              <td style="${tdRight} font-weight: 700; color: #0D3B66;">${c.costLacs}</td>
-              <td style="${tdRight}">${c.sharePct}</td>
-              <td style="${tdRight}">${inIN(c.cse)}</td>
-              <td style="${tdRight}">${c.weightMT}</td>
-              <td style="${tdRight}">${c.trips}</td>
-              <td style="${tdRight}">${inIN(c.ratePerMT)}</td>
-            </tr>
-          `).join('')}
-          <tr style="background: #F1F5F9; font-weight: 800;">
-            <td style="${tdStyle} font-weight: 800;">Total Paid Operations</td>
-            <td style="${tdRight} font-weight: 900; color: #0D3B66;">${meta.totalCostLacs}</td>
-            <td style="${tdRight} font-weight: 800;">100.0%</td>
-            <td style="${tdRight} font-weight: 800;">${inIN(meta.totalCSE)}</td>
-            <td style="${tdRight} font-weight: 800;">${meta.totalWeightMT}</td>
-            <td style="${tdRight} font-weight: 800;">${meta.totalTrips}</td>
-            <td style="${tdRight} font-weight: 800;">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TABLE 2: Dedicated vs Market Hire (Week-Wise Cost) -->
-    <div style="margin-bottom: 22px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #0D3B66; margin: 0 0 6px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        2. Vehicle Sourcing Model: Dedicated vs Market Hire (Week-Wise Cost)
-      </h3>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle}">Timeline</th>
-            <th style="${thStyle} text-align: right;">Dedicated Spend</th>
-            <th style="${thStyle} text-align: right;">Market Hire Spend</th>
-            <th style="${thStyle} text-align: right;">Total Freight</th>
-            <th style="${thStyle} text-align: right;">Market Hire %</th>
-            <th style="${thStyle} text-align: right;">Volume (CSE)</th>
-            <th style="${thStyle} text-align: right;">Tonnage</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${weekTable.map((w, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold}">${w.week}</td>
-              <td style="${tdRight}">${w.dedCostLacs}</td>
-              <td style="${tdRight} font-weight: 700; color: #BE123C;">${w.mktCostLacs}</td>
-              <td style="${tdRight} font-weight: 800; color: #0D3B66;">${w.totalCostLacs}</td>
-              <td style="${tdRight} font-weight: 700; color: ${parseFloat(w.mktShare) > 70 ? '#BE123C' : '#0F172A'};">${w.mktShare}</td>
-              <td style="${tdRight}">${inIN(w.cse)}</td>
-              <td style="${tdRight}">${w.weightMT}</td>
-            </tr>
-          `).join('')}
-          <tr style="background: #F1F5F9; font-weight: 800;">
-            <td style="${tdStyle} font-weight: 800;">Full Period Total</td>
-            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.dedCostLacs) || meta.dedCostLacs}</td>
-            <td style="${tdRight} font-weight: 800; color: #BE123C;">${(weekTotals && weekTotals.mktCostLacs) || meta.mktCostLacs}</td>
-            <td style="${tdRight} font-weight: 900; color: #0D3B66;">${(weekTotals && weekTotals.totalCostLacs) || meta.totalCostLacs}</td>
-            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.mktShare) || meta.mktSharePct || '—'}</td>
-            <td style="${tdRight} font-weight: 800;">${inIN((weekTotals && weekTotals.cse) ?? meta.totalCSE)}</td>
-            <td style="${tdRight} font-weight: 800;">${(weekTotals && weekTotals.weightMT) || meta.totalWeightMT}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TABLE 3: Distribution Center (DC-Wise) Cost -->
-    <div style="margin-bottom: 22px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #0D3B66; margin: 0 0 6px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        3. Distribution Center (DC-Wise) Freight Allocation
-      </h3>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle}">Destination DC / Depot</th>
-            <th style="${thStyle} text-align: right;">Freight Cost</th>
-            <th style="${thStyle} text-align: right;">Spend Share</th>
-            <th style="${thStyle} text-align: right;">Volume (CSE)</th>
-            <th style="${thStyle} text-align: right;">Tonnage (MT)</th>
-            <th style="${thStyle} text-align: right;">Trips</th>
-            <th style="${thStyle}">Key Inbound Origin(s)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${dcTable.slice(0, 8).map((d, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold}">${d.dc}</td>
-              <td style="${tdRight} font-weight: 700; color: #0D3B66;">${d.costLacs}</td>
-              <td style="${tdRight}">${d.sharePct}</td>
-              <td style="${tdRight}">${inIN(d.cse)}</td>
-              <td style="${tdRight}">${d.weightMT}</td>
-              <td style="${tdRight}">${d.trips}</td>
-              <td style="${tdStyle} font-size: 11px; color: #475569;">${d.primaryOrigin}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TABLE 4: Top 6 Major Unplanned Route Corridors -->
-    <div style="margin-bottom: 22px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #0D3B66; margin: 0 0 6px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        4. Top 6 Major Unplanned Route Corridors (Across All Categories)
-      </h3>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle} width: 45px; text-align: center;">Rank</th>
-            <th style="${thStyle}">Unplanned Corridor (From Depot → To Depot)</th>
-            <th style="${thStyle} text-align: right;">Freight Cost</th>
-            <th style="${thStyle} text-align: right;">Unplanned Share</th>
-            <th style="${thStyle} text-align: right;">Trips</th>
-            <th style="${thStyle} text-align: right;">Tonnage</th>
-            <th style="${thStyle}">Primary Categories</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${top6RoutesTable.map((r, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdStyle} text-align: center; font-weight: 800; color: #0D3B66;">#${r.rank}</td>
-              <td style="${tdBold}">${r.corridor}</td>
-              <td style="${tdRight} font-weight: 700; color: #0D3B66;">${r.costLacs}</td>
-              <td style="${tdRight}">${r.sharePct}</td>
-              <td style="${tdRight}">${r.trips}</td>
-              <td style="${tdRight}">${r.weightMT}</td>
-              <td style="${tdStyle} font-size: 11px; color: #475569;">${r.topCategories}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TABLE 5: Route Planning Status: Planned vs Unplanned Summary -->
-    <div style="margin-bottom: 22px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #0D3B66; margin: 0 0 6px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        5. Route Planning Status: Planned vs Unplanned Freight Summary
-      </h3>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle}">Planning Status</th>
-            <th style="${thStyle} text-align: right;">Freight Spend</th>
-            <th style="${thStyle} text-align: right;">Spend Share</th>
-            <th style="${thStyle} text-align: right;">Volume (CSE)</th>
-            <th style="${thStyle} text-align: right;">Weight (MT)</th>
-            <th style="${thStyle} text-align: right;">Trips</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${planningSummary.map((p, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold} color: ${p.status === 'Planned' ? '#047857' : '#0D3B66'};">${p.status} Transfers</td>
-              <td style="${tdRight} font-weight: 800; color: ${p.status === 'Planned' ? '#047857' : '#0D3B66'};">${p.costLacs}</td>
-              <td style="${tdRight} font-weight: 700;">${p.sharePct}</td>
-              <td style="${tdRight}">${inIN(p.volumeCSE)}</td>
-              <td style="${tdRight}">${p.weightMT}</td>
-              <td style="${tdRight}">${p.trips}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <!-- Sub-table: Category Unplanned Breakdown -->
-      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 10px 0 4px 2px;">
-        Unplanned Spend Breakdown By Category:
-      </div>
-      <table style="${tableWrap}">
-        <thead>
-          <tr>
-            <th style="${thStyle}">Category</th>
-            <th style="${thStyle} text-align: right;">Unplanned Cost</th>
-            <th style="${thStyle} text-align: right;">% of Unplanned Spend</th>
-            <th style="${thStyle} text-align: right;">Trips</th>
-            <th style="${thStyle}">Primary Unplanned Corridor</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${catUnplanTable.map((c, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold}">${c.category}</td>
-              <td style="${tdRight} font-weight: 700; color: #0D3B66;">${c.unplanCostLacs}</td>
-              <td style="${tdRight}">${c.shareOfUnplan}</td>
-              <td style="${tdRight}">${c.trips}</td>
-              <td style="${tdStyle} font-size: 11px; color: #475569;">${c.topCorridor}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- TABLE 6: Co-Pack Freight Cost Savings Analysis -->
-    <div style="margin-bottom: 24px;">
-      <h3 style="font-size: 13.5px; font-weight: 800; color: #047857; margin: 0 0 6px 0; border-left: 3px solid #047857; padding-left: 8px; text-transform: uppercase;">
-        6. Co-Pack Transfer Volume & Freight Cost Savings Analysis
-      </h3>
-      <p style="font-size: 11.5px; color: #475569; margin: 0 0 8px 0;">
-        Co-pack transfers represent secondary depot manufacturing relocations executed at zero direct linehaul freight expenditure to our primary logistics ledger. Savings are calculated against equivalent contracted commercial primary linehaul rates.
-      </p>
-      <table style="${tableWrap}">
-        <thead>
-          <tr style="background: #047857;">
-            <th style="${thStyle} background: #047857; border-color: #047857;">Category</th>
-            <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Shipped Volume (CSE)</th>
-            <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Co-Pack Weight (MT)</th>
-            <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Trips</th>
-            <th style="${thStyle} background: #047857; border-color: #047857; text-align: right;">Freight Cost Saved</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${copackTable.length === 0 ? `
-            <tr>
-              <td colspan="5" style="${tdStyle} text-align: center; color: #94A3B8;">No Co-pack records in selected scope</td>
-            </tr>
-          ` : copackTable.map((c, i) => `
-            <tr style="${i % 2 === 1 ? trAlt : ''}">
-              <td style="${tdBold}">${c.category}</td>
-              <td style="${tdRight}">${inIN(c.cse)}</td>
-              <td style="${tdRight}">${c.weightMT}</td>
-              <td style="${tdRight}">${c.trips}</td>
-              <td style="${tdRight} font-weight: 900; color: #047857; background: #ECFDF5;">${c.savedCostLacs}</td>
-            </tr>
-          `).join('')}
-          <tr style="background: #D1FAE5; font-weight: 800;">
-            <td style="${tdStyle} font-weight: 800; color: #047857;">Total Co-Pack Value Added</td>
-            <td style="${tdRight} font-weight: 800; color: #047857;">${inIN(meta.totalCopackCSE || 0)}</td>
-            <td style="${tdRight} font-weight: 800; color: #047857;">${meta.totalCopackMT}</td>
-            <td style="${tdRight} font-weight: 800; color: #047857;">${meta.totalCopackTrips || 0}</td>
-            <td style="${tdRight} font-weight: 900; color: #047857; font-size: 13px;">${meta.totalSavingsLacs} Saved</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- SECTION 7: SENIOR ANALYST STRATEGIC INSIGHTS & RECOMMENDATIONS -->
-    <div style="background: #FAF8F5; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 18px 20px; margin-bottom: 24px;">
-      <h3 style="font-size: 14px; font-weight: 800; color: #0D3B66; margin: 0 0 14px 0; border-left: 3px solid #0D3B66; padding-left: 8px; text-transform: uppercase;">
-        7. Senior Logistics Analyst Strategic Insights & Actionable Recommendations
-      </h3>
-
-      ${recommendations.map(r => `
-        <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #E2E8F0;">
-          <div style="font-size: 12.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px;">${r.title}</div>
-          <div style="font-size: 11.5px; color: #475569; margin-bottom: 6px; line-height: 1.45;">
-            <strong>Data Finding:</strong> ${r.finding}
-          </div>
-          <div style="font-size: 11.5px; color: #0D3B66; background: #FFFFFF; padding: 7px 10px; border-radius: 4px; border-left: 3px solid #0D3B66; line-height: 1.45;">
-            <strong>Actionable Recommendation:</strong> ${r.action}
-          </div>
-        </div>
-      `).join('')}
-    </div>
-
-    <!-- SIGN-OFF -->
-    <div style="font-size: 12px; color: #64748B; border-top: 1px solid #E2E8F0; padding-top: 14px;">
-      Best regards,<br/>
-      <strong>Logistics Operations & Supply Chain Analytics Team</strong><br/>
-      Inter-Depot Transfer (IDT) Control Tower
-    </div>
-
-  </div>
+  </center>
 </body>
 </html>`;
 }
