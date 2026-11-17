@@ -1294,3 +1294,25 @@ export async function exportWeeklyReportToExcel(reportData) {
   const fileName = `IDT_Logistics_Weekly_Report_${safeMonth}_${safeWeek}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
+
+/**
+ * Creates and triggers download of an .eml draft file with X-Unsent: 1.
+ * Opening this file in Windows opens Outlook in draft compose mode with all 7 HTML tables pre-filled in the body.
+ */
+export function downloadEmlDraft(reportData, htmlBody) {
+  if (!htmlBody) return;
+  const cleanSubj = ((reportData && reportData.meta && reportData.meta.subject) || 'IDT Weekly Logistics Report').replace(/[\r\n]/g, '');
+  const emlContent = `To: \nSubject: ${cleanSubj}\nX-Unsent: 1\nMIME-Version: 1.0\nContent-Type: text/html; charset=utf-8\n\n${htmlBody}\n`;
+  const blob = new Blob([emlContent], { type: 'message/rfc822' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeMonth = ((reportData && reportData.meta && reportData.meta.monthLabel) || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_');
+  a.download = `IDT_Logistics_Weekly_Report_${safeMonth}.eml`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+}

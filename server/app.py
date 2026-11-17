@@ -152,7 +152,7 @@ def execute_open_outlook_draft(subject: str, html_body: Optional[str] = None, te
         elif text_body:
             mail.Body = text_body
 
-        print("[Outlook Task] 2. Displaying Outlook Classic draft on screen with tables...")
+        print("[Outlook Task] Displaying Outlook Classic draft on screen with tables...")
         mail.Display(False)
         try:
             mail.GetInspector.Activate()
@@ -160,11 +160,48 @@ def execute_open_outlook_draft(subject: str, html_body: Optional[str] = None, te
             pass
 
         opened = True
-        print("[Success] Outlook Classic automatically opened and draft displayed with weekly logistics tables!")
+        print("[Success] Outlook Classic automatically opened and draft displayed with weekly logistics tables via COM!")
     except Exception as e:
-        print(f"[Outlook Task] COM method info: {e}. Trying executable spawn fallback...")
+        print(f"[Outlook Task] COM method info: {e}. Trying .eml native draft fallback...")
 
-    # Method 2: Fallback direct spawn via outlook.exe /c ipm.note
+    # Method 2: Launch .eml draft file with X-Unsent: 1 (Opens Outlook in compose draft mode with all HTML tables intact)
+    if not opened and (html_body or text_body):
+        try:
+            print("[Outlook Task] 2. Generating .eml draft file with full HTML tables and X-Unsent: 1...")
+            clean_subj = subject.replace('\r', '').replace('\n', '')
+            body_content = html_body or f"<pre style='font-family: Consolas, monospace;'>{text_body}</pre>"
+            eml_data = (
+                f"Subject: {clean_subj}\n"
+                f"X-Unsent: 1\n"
+                f"MIME-Version: 1.0\n"
+                f"Content-Type: text/html; charset=utf-8\n\n"
+                f"{body_content}\n"
+            )
+            temp_dir = os.path.join(tempfile.gettempdir(), "idt_reports")
+            os.makedirs(temp_dir, exist_ok=True)
+            eml_file = os.path.join(temp_dir, f"IDT_Weekly_Report_Draft_{int(time.time())}.eml")
+            with open(eml_file, "w", encoding="utf-8") as f:
+                f.write(eml_data)
+
+            olk_candidates = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps\olk.exe"),
+                r"C:\Program Files\Microsoft Office\Root\Office16\OUTLOOK.EXE",
+                r"C:\Program Files (x86)\Microsoft Office\Root\Office16\OUTLOOK.EXE"
+            ]
+            olk_exe = next((p for p in olk_candidates if os.path.isfile(p)), None)
+
+            if olk_exe and os.path.basename(olk_exe).lower() == 'olk.exe':
+                subprocess.Popen([olk_exe, eml_file])
+                opened = True
+                print(f"[Success] Launched olk.exe with drafted .eml tables: {eml_file}")
+            else:
+                os.startfile(eml_file)
+                opened = True
+                print(f"[Success] Launched .eml draft with tables via os.startfile: {eml_file}")
+        except Exception as e2:
+            print(f"[Outlook Task] .eml launch fallback error: {e2}")
+
+    # Method 3: Fallback direct spawn via outlook.exe /c ipm.note
     if not opened:
         try:
             exe_path = find_outlook_executable()
@@ -172,8 +209,8 @@ def execute_open_outlook_draft(subject: str, html_body: Optional[str] = None, te
             subprocess.Popen([exe_path, '/c', 'ipm.note'])
             opened = True
             print("[Success] Outlook Classic spawned via executable!")
-        except Exception as e2:
-            print(f"[Error] Failed to spawn Outlook executable: {e2}")
+        except Exception as e3:
+            print(f"[Error] Failed to spawn Outlook executable: {e3}")
 
     return opened
 

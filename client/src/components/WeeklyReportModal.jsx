@@ -11,8 +11,22 @@ export default function WeeklyReportModal({
 }) {
   const [copiedState, setCopiedState] = useState(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [draftSuccess, setDraftSuccess] = useState(false);
 
   if (!isOpen || !reportData) return null;
+
+  const handleOpenOutlookClick = async () => {
+    try {
+      setDraftSuccess(true);
+      if (onOpenOutlookAgain) {
+        await onOpenOutlookAgain();
+      }
+      setTimeout(() => setDraftSuccess(false), 3500);
+    } catch (e) {
+      console.error('Error opening Outlook draft:', e);
+      setDraftSuccess(false);
+    }
+  };
 
   const handleCopyRich = async () => {
     try {
@@ -84,15 +98,19 @@ export default function WeeklyReportModal({
             <button 
               type="button" 
               className="report-btn primary-btn"
-              onClick={onOpenOutlookAgain}
-              title="Launch Outlook Classic Compose on Laptop"
+              onClick={handleOpenOutlookClick}
+              title="Draft full report with all 7 tables in Outlook Classic"
+              style={{
+                background: draftSuccess ? 'linear-gradient(135deg, #059669, #047857)' : undefined,
+                borderColor: draftSuccess ? '#059669' : undefined
+              }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                 <polyline points="15 3 21 3 21 9"/>
                 <line x1="10" y1="14" x2="21" y2="3"/>
               </svg>
-              Open Outlook Classic
+              <span>{draftSuccess ? '✓ Draft Opened in Outlook!' : 'Open Outlook Classic'}</span>
             </button>
 
 

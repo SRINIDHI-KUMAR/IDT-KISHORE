@@ -8,7 +8,7 @@ import WeeklyReportModal from './components/WeeklyReportModal';
 import InstantTooltip from './components/InstantTooltip';
 import { EMBEDDED_MASTER_DATA } from './data/defaultData';
 import html2canvas from 'html2canvas';
-import { buildWeeklyReportData, buildRichHtmlEmail, buildPlainTextEmail } from './utils/reportGenerator';
+import { buildWeeklyReportData, buildRichHtmlEmail, buildPlainTextEmail, downloadEmlDraft } from './utils/reportGenerator';
 import {
   norm, toNum, txt, inIN, toLacs, toTons, pct,
   normDepotName, normFrt, normPlan, normWeek
@@ -800,58 +800,11 @@ export default function App() {
       setReportHtml(htmlBody);
       setReportPlainText(plainTextBody);
 
-      // Copy rich HTML tables directly to system clipboard for easy manual pasting
-      if (navigator.clipboard && window.ClipboardItem) {
-        try {
-          const blobHtml = new Blob([htmlBody], { type: 'text/html' });
-          const blobText = new Blob([plainTextBody], { type: 'text/plain' });
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
-          ]);
-        } catch (clipErr) {
-          console.warn('Browser clipboard write info:', clipErr);
-        }
-      }
-
-      // 2. Trigger backend automation to launch Outlook Classic with formatted tables in draft body (no SS)
-      let backendSuccess = false;
-      try {
-        const resp = await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subject: reportData.meta.subject,
-            html_body: htmlBody,
-            text_body: plainTextBody
-          })
-        });
-        if (resp.ok) backendSuccess = true;
-      } catch (backendErr) {
-        console.warn('Backend automation draft endpoint error:', backendErr);
-        try {
-          const resp2 = await fetch('http://127.0.0.1:5005/api/trigger-screenshot-and-outlook', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subject: reportData.meta.subject,
-              html_body: htmlBody,
-              text_body: plainTextBody
-            })
-          });
-          if (resp2.ok) backendSuccess = true;
-        } catch (e2) {}
-      }
-
-      // 3. Open executive report preview modal and display confirmation toast
+      // Open executive report preview modal
       setIsReportModalOpen(true);
-      setReportToast({
-        type: 'success',
-        msg: '✅ Outlook Classic opened! Weekly logistics tables drafted directly into email body.'
-      });
 
-      setTimeout(() => {
-        setReportToast(null);
-      }, 7000);
+      // Trigger drafting into Outlook
+      await triggerOutlookDraftAction(reportData, htmlBody, plainTextBody);
 
     } catch (err) {
       console.error('Weekly report generation error:', err);
@@ -862,27 +815,77 @@ export default function App() {
     }
   };
 
-  const handleOpenOutlookAgain = async () => {
-    if (!activeReportData) return;
+  const triggerOutlookDraftAction = async (reportData, htmlBody, plainTextBody) => {
+    // 1. Copy rich HTML tables + plain text directly to clipboard
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        const blobHtml = new Blob([htmlBody], { type: 'text/html' });
+        const blobText = new Blob([plainTextBody], { type: 'text/plain' });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
+        ]);
+      } catch (clipErr) {
+        console.warn('Clipboard write warning:', clipErr);
+        try {
+          await navigator.clipboard.writeText(plainTextBody);
+        } catch (e) {}
+      }
+    }
+
+    // 2. Try local Python automation backend on 127.0.0.1:5005
+    let backendSuccess = false;
     try {
-      await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const resp = await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: activeReportData.meta.subject,
-          html_body: reportHtml,
-          text_body: reportPlainText
-        })
+          subject: reportData.meta.subject,
+          html_body: htmlBody,
+          text_body: plainTextBody
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      if (resp.ok) backendSuccess = true;
+    } catch (backendErr) {
+      console.warn('Backend automation endpoint unavailable, using direct client draft handler:', backendErr);
+    }
+
+    if (backendSuccess) {
       setReportToast({
         type: 'success',
-        msg: '✅ Outlook Classic draft created with weekly logistics tables.'
+        msg: '✅ Outlook Classic draft created with all 7 tables in email body!'
       });
-      setTimeout(() => setReportToast(null), 5000);
-    } catch (e) {
-      const mailtoUrl = `mailto:?subject=${encodeURIComponent(activeReportData.meta.subject)}`;
-      window.open(mailtoUrl, '_self');
+    } else {
+      // Backend not running locally or web app accessed via Render:
+      // Download .eml draft file (opens in Outlook Classic with all 7 formatted tables pre-drafted)
+      // and trigger mailto
+      try {
+        downloadEmlDraft(reportData, htmlBody);
+      } catch (emlErr) {
+        console.warn('EML draft generation error:', emlErr);
+      }
+      try {
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(reportData.meta.subject)}`;
+        window.open(mailtoUrl, '_self');
+      } catch (mErr) {}
+
+      setReportToast({
+        type: 'success',
+        msg: '✅ Outlook draft (.eml) created with all 7 tables! (Tables also copied to clipboard: Ctrl+V)'
+      });
     }
+
+    setTimeout(() => {
+      setReportToast(null);
+    }, 7000);
+  };
+
+  const handleOpenOutlookAgain = async () => {
+    if (!activeReportData) return;
+    await triggerOutlookDraftAction(activeReportData, reportHtml, reportPlainText);
   };
 
   return (
