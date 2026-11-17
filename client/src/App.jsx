@@ -7,6 +7,7 @@ import UnplannedRoutesModal from './components/UnplannedRoutesModal';
 import WeeklyReportModal from './components/WeeklyReportModal';
 import InstantTooltip from './components/InstantTooltip';
 import { EMBEDDED_MASTER_DATA } from './data/defaultData';
+import html2canvas from 'html2canvas';
 import { buildWeeklyReportData, buildRichHtmlEmail, buildPlainTextEmail } from './utils/reportGenerator';
 import {
   norm, toNum, txt, inIN, toLacs, toTons, pct,
@@ -237,6 +238,7 @@ export default function App() {
   const [activeReportData, setActiveReportData] = useState(null);
   const [reportHtml, setReportHtml] = useState('');
   const [reportPlainText, setReportPlainText] = useState('');
+  const [activeScreenshot, setActiveScreenshot] = useState(null);
 
   // Theme Sync
   useEffect(() => {
@@ -782,12 +784,13 @@ export default function App() {
     try {
       setIsSidebarOpen(false);
       setIsGeneratingReport(true);
-      setReportToast({ type: 'info', msg: '⏳ Compiling IDT Logistics Weekly Executive Summary...' });
+      setReportToast({ type: 'info', msg: '📨 Generating weekly logistics report & launching Outlook Classic...' });
 
-      // 1. Calculate and build full analyst report dataset with 6 tables + recommendations
+      // 1. Calculate and build full analyst report dataset with 6 tables (including all weeks in Table 2)
       const reportData = buildWeeklyReportData({
         mainRows,
         copackRows,
+        allRows: rows,
         filters
       });
       const htmlBody = buildRichHtmlEmail(reportData);
@@ -797,31 +800,23 @@ export default function App() {
       setReportHtml(htmlBody);
       setReportPlainText(plainTextBody);
 
-      // 2. Place rich HTML tables and plain text on system clipboard for Outlook Classic
-      let clipboardSuccess = false;
+      // Copy rich HTML tables directly to system clipboard for easy manual pasting
       if (navigator.clipboard && window.ClipboardItem) {
         try {
           const blobHtml = new Blob([htmlBody], { type: 'text/html' });
           const blobText = new Blob([plainTextBody], { type: 'text/plain' });
           await navigator.clipboard.write([
-            new ClipboardItem({
-              'text/html': blobHtml,
-              'text/plain': blobText
-            })
+            new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
           ]);
-          clipboardSuccess = true;
         } catch (clipErr) {
-          console.warn('Clipboard write fallback:', clipErr);
-          try {
-            await navigator.clipboard.writeText(plainTextBody);
-            clipboardSuccess = true;
-          } catch (e2) {}
+          console.warn('Browser clipboard write info:', clipErr);
         }
       }
 
-      // 3. Trigger backend automation to search & open Outlook Classic on the laptop
+      // 2. Trigger backend automation to launch Outlook Classic with formatted tables in draft body (no SS)
+      let backendSuccess = false;
       try {
-        await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
+        const resp = await fetch('http://127.0.0.1:5005/api/draft-outlook-report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -830,26 +825,28 @@ export default function App() {
             text_body: plainTextBody
           })
         });
+        if (resp.ok) backendSuccess = true;
       } catch (backendErr) {
-        console.warn('Backend automation info:', backendErr);
+        console.warn('Backend automation draft endpoint error:', backendErr);
+        try {
+          const resp2 = await fetch('http://127.0.0.1:5005/api/trigger-screenshot-and-outlook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subject: reportData.meta.subject,
+              html_body: htmlBody,
+              text_body: plainTextBody
+            })
+          });
+          if (resp2.ok) backendSuccess = true;
+        } catch (e2) {}
       }
 
-      // 4. Open native mailto / Outlook Classic compose link on laptop
-      const mailtoUrl = `mailto:?subject=${encodeURIComponent(reportData.meta.subject)}&body=${encodeURIComponent(plainTextBody)}`;
-      const mailLink = document.createElement('a');
-      mailLink.href = mailtoUrl;
-      mailLink.style.display = 'none';
-      document.body.appendChild(mailLink);
-      mailLink.click();
-      setTimeout(() => {
-        if (mailLink.parentNode) mailLink.parentNode.removeChild(mailLink);
-      }, 500);
-
-      // 5. Open executive report preview modal and display confirmation toast
+      // 3. Open executive report preview modal and display confirmation toast
       setIsReportModalOpen(true);
       setReportToast({
         type: 'success',
-        msg: '✅ Outlook Classic invoked! 6 formatted tables & recommendations copied to clipboard.'
+        msg: '✅ Outlook Classic opened! Weekly logistics tables drafted directly into email body.'
       });
 
       setTimeout(() => {
@@ -877,10 +874,15 @@ export default function App() {
           text_body: reportPlainText
         })
       });
-    } catch (e) {}
-
-    const mailtoUrl = `mailto:?subject=${encodeURIComponent(activeReportData.meta.subject)}&body=${encodeURIComponent(reportPlainText)}`;
-    window.open(mailtoUrl, '_self');
+      setReportToast({
+        type: 'success',
+        msg: '✅ Outlook Classic draft created with weekly logistics tables.'
+      });
+      setTimeout(() => setReportToast(null), 5000);
+    } catch (e) {
+      const mailtoUrl = `mailto:?subject=${encodeURIComponent(activeReportData.meta.subject)}`;
+      window.open(mailtoUrl, '_self');
+    }
   };
 
   return (

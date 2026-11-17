@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { exportWeeklyReportToExcel } from '../utils/reportGenerator';
 
 export default function WeeklyReportModal({
   isOpen,
@@ -9,7 +10,7 @@ export default function WeeklyReportModal({
   onOpenOutlookAgain
 }) {
   const [copiedState, setCopiedState] = useState(null);
-  const [activeTab, setActiveTab] = useState('preview'); // 'preview' | 'plaintext'
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   if (!isOpen || !reportData) return null;
 
@@ -43,6 +44,16 @@ export default function WeeklyReportModal({
     }
   };
 
+  const handleDownloadExcel = async () => {
+    try {
+      await exportWeeklyReportToExcel(reportData);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (e) {
+      console.error('Failed to export report to Excel:', e);
+    }
+  };
+
   return (
     <div 
       className="weekly-report-backdrop"
@@ -65,11 +76,7 @@ export default function WeeklyReportModal({
             <div>
               <div className="report-title-row">
                 <h2 className="report-title">OUTLOOK CLASSIC WEEKLY REPORT DRAFT</h2>
-                <span className="report-status-badge">Ready to Send</span>
               </div>
-              <p className="report-sub">
-                Complete IDT logistics summary with 6 structured tables & senior analyst recommendations
-              </p>
             </div>
           </div>
 
@@ -88,22 +95,28 @@ export default function WeeklyReportModal({
               Open Outlook Classic
             </button>
 
-            <button 
-              type="button" 
-              className="report-btn secondary-btn"
-              onClick={handleCopyRich}
-              title="Copy formatted tables to clipboard"
-            >
-              {copiedState === 'rich' ? '✓ Copied Rich HTML!' : '📋 Copy Rich Tables'}
-            </button>
 
             <button 
               type="button" 
               className="report-btn secondary-btn"
-              onClick={handleCopyText}
-              title="Copy plain-text tables"
+              onClick={handleDownloadExcel}
+              title="Download all 6 report tables as separate sheets in Excel (.xlsx)"
+              style={{
+                borderColor: downloadSuccess ? '#059669' : '#10B981',
+                color: downloadSuccess ? '#065F46' : '#047857',
+                background: downloadSuccess ? '#D1FAE5' : '#ECFDF5',
+                fontWeight: '700',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
             >
-              {copiedState === 'text' ? '✓ Copied Text!' : '📄 Copy Plain Text'}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>{downloadSuccess ? '✓ Downloaded!' : 'Download'}</span>
             </button>
 
             <button 
@@ -117,39 +130,19 @@ export default function WeeklyReportModal({
           </div>
         </div>
 
-        {/* TAB SELECTOR */}
+        {/* SUBJECT INFO STRIP */}
         <div className="report-tab-strip">
-          <button 
-            type="button" 
-            className={`report-tab-btn ${activeTab === 'preview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('preview')}
-          >
-            Formatted Email Preview (Tables & Styling)
-          </button>
-          <button 
-            type="button" 
-            className={`report-tab-btn ${activeTab === 'plaintext' ? 'active' : ''}`}
-            onClick={() => setActiveTab('plaintext')}
-          >
-            Plain Text / ASCII Format
-          </button>
-          <div className="report-tab-info">
+          <div className="report-tab-info" style={{ marginLeft: 0 }}>
             Subject: <strong>{reportData.meta.subject}</strong>
           </div>
         </div>
 
-        {/* MODAL CONTENT */}
+        {/* MODAL CONTENT: FORMATTED EMAIL PREVIEW */}
         <div className="weekly-report-content">
-          {activeTab === 'preview' ? (
-            <div 
-              className="report-preview-frame"
-              dangerouslySetInnerHTML={{ __html: richHtml }}
-            />
-          ) : (
-            <pre className="report-plain-pre">
-              {plainText}
-            </pre>
-          )}
+          <div 
+            className="report-preview-frame"
+            dangerouslySetInnerHTML={{ __html: richHtml }}
+          />
         </div>
       </div>
     </div>

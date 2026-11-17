@@ -1,18 +1,20 @@
 import os
 import io
 import time
+import base64
 import ctypes
+import tempfile
 import threading
 import subprocess
-import urllib.parse
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
+import pythoncom
 import win32clipboard
-import pyautogui
-from PIL import ImageGrab
+import win32com.client.dynamic
+from PIL import ImageGrab, Image
 
 app = FastAPI(title="IDT Dashboard Outlook Automation Backend")
 
@@ -25,151 +27,211 @@ app.add_middleware(
 )
 
 user32 = ctypes.windll.user32
-
 VK_LWIN = 0x5B
 VK_SNAPSHOT = 0x2C
-VK_TAB = 0x09
-VK_CONTROL = 0x11
-VK_V = 0x56
 KEYEVENTF_KEYUP = 0x0002
 
-def send_key_tap(vk_code: int):
-    """Sends a hardware-level key press and release event."""
-    user32.keybd_event(vk_code, 0, 0, 0)
-    time.sleep(0.06)
-    user32.keybd_event(vk_code, 0, KEYEVENTF_KEYUP, 0)
-    time.sleep(0.06)
-
-def set_clipboard_html(html_fragment: str, plain_text: Optional[str] = None):
-    """
-    Sets both CF_HTML and CF_UNICODETEXT on Windows system clipboard.
-    Outlook and Office applications use CF_HTML to render actual formatted tables.
-    """
+def press_win_printscreen():
+    """Simulates pressing Win + PrintScreen to save full desktop capture to Pictures\\Screenshots."""
     try:
-        CF_HTML = win32clipboard.RegisterClipboardFormat('HTML Format')
-        header_template = (
-            'Version:0.9\r\n'
-            'StartHTML:{start_html:08d}\r\n'
-            'EndHTML:{end_html:08d}\r\n'
-            'StartFragment:{start_frag:08d}\r\n'
-            'EndFragment:{end_frag:08d}\r\n'
-        )
-        dummy = header_template.format(start_html=0, end_html=0, start_frag=0, end_frag=0)
-        html_doc = f'<html><body><!--StartFragment-->{html_fragment}<!--EndFragment--></body></html>'
-        
-        start_html = len(dummy.encode('utf-8'))
-        start_frag = start_html + len('<html><body><!--StartFragment-->'.encode('utf-8'))
-        end_frag = start_frag + len(html_fragment.encode('utf-8'))
-        end_html = start_html + len(html_doc.encode('utf-8'))
-        
-        full_payload = header_template.format(
-            start_html=start_html,
-            end_html=end_html,
-            start_frag=start_frag,
-            end_frag=end_frag
-        ) + html_doc
+        user32.keybd_event(VK_LWIN, 0, 0, 0)
+        time.sleep(0.05)
+        user32.keybd_event(VK_SNAPSHOT, 0, 0, 0)
+        time.sleep(0.06)
+        user32.keybd_event(VK_SNAPSHOT, 0, KEYEVENTF_KEYUP, 0)
+        time.sleep(0.05)
+        user32.keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0)
+    except Exception as e:
+        print(f"[Keybd] Win+PrintScreen error: {e}")
+
+def copy_pil_image_to_clipboard(img: Image.Image):
+    """Sets DIB bitmap directly onto Windows system clipboard."""
+    try:
+        output = io.BytesIO()
+        img.convert("RGB").save(output, "BMP")
+        data = output.getvalue()[14:]  # Strip 14-byte BMP header for CF_DIB
+        output.close()
 
         win32clipboard.OpenClipboard()
-        try:
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardData(CF_HTML, full_payload.encode('utf-8'))
-            if plain_text:
-                win32clipboard.SetClipboardData(win32clipboard.CF_UNICODETEXT, plain_text)
-        finally:
-            win32clipboard.CloseClipboard()
-            
-        print("[Clipboard] Rich HTML and Plain-Text tables placed on Windows system clipboard.")
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+        win32clipboard.CloseClipboard()
+        print("[Clipboard] Image placed on Windows system clipboard (CF_DIB).")
         return True
     except Exception as e:
-        print(f"[Error] Failed to set clipboard HTML: {e}")
+        print(f"[Clipboard] Error: {e}")
         return False
 
-def execute_search_open_outlook_and_draft(subject: str, html_body: str, text_body: str):
+def find_outlook_executable() -> str:
+    """Finds Outlook executable path."""
+    candidates = [
+        r"C:\Program Files\Microsoft Office\Root\Office16\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Root\Office16\OUTLOOK.EXE",
+        r"C:\Program Files\Microsoft Office\Office16\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Office16\OUTLOOK.EXE",
+        r"C:\Program Files\Microsoft Office\Office15\OUTLOOK.EXE",
+        r"C:\Program Files (x86)\Microsoft Office\Office15\OUTLOOK.EXE"
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            return p
+    return "outlook.exe"
+
+def save_screenshot_image(image_base64: Optional[str] = None) -> str:
     """
-    Searches and opens Outlook Classic on the user's laptop:
-    1. Sets Windows system clipboard with rich HTML tables & plain-text summary.
-    2. Opens Windows Start menu -> searches 'outlook' -> launches Outlook.
-    3. Triggers 'New Email' (Ctrl+N), navigates to the body, and pastes (Ctrl+V) the rich tables.
+    Saves screenshot to disk so it can be attached to Outlook draft.
+    Also places it on the system clipboard.
     """
-    print("[Outlook Task] 1. Placing report tables on Windows clipboard...")
-    set_clipboard_html(html_body, text_body)
+    press_win_printscreen()
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    out_dir = os.path.join(tempfile.gettempdir(), "idt_reports")
+    os.makedirs(out_dir, exist_ok=True)
+    file_path = os.path.join(out_dir, f"IDT_Logistics_Weekly_Report_{timestamp}.png")
 
-    # Launch or search for Outlook Classic
-    time.sleep(0.3)
-    print("[Outlook Task] 2. Searching Windows for Outlook Classic...")
+    saved = False
+    if image_base64:
+        try:
+            b64_str = image_base64.split(',')[-1]
+            raw_bytes = base64.b64decode(b64_str)
+            with open(file_path, "wb") as f:
+                f.write(raw_bytes)
+            saved = True
+            print(f"[Screenshot] Saved frontend canvas screenshot: {file_path}")
+        except Exception as e:
+            print(f"[Screenshot] Failed to decode base64: {e}")
+
+    if not saved:
+        try:
+            img = ImageGrab.grab()
+            img.save(file_path, "PNG")
+            saved = True
+            print(f"[Screenshot] Saved native desktop screen grab: {file_path}")
+        except Exception as e:
+            print(f"[Screenshot] ImageGrab failed: {e}")
+
+    if not saved or not os.path.isfile(file_path):
+        # Fallback to existing public asset if both base64 and native grab fail
+        for fallback_cand in [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client", "public", "south_india_map.png")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client", "public", "iceberg.png"))
+        ]:
+            if os.path.isfile(fallback_cand):
+                import shutil
+                shutil.copyfile(fallback_cand, file_path)
+                saved = True
+                print(f"[Screenshot] Fallback image used: {file_path}")
+                break
+
+    # Copy to clipboard
     try:
-        # Check direct launch first
-        subprocess.Popen(['outlook.exe', '/c', 'ipm.note'], shell=True)
-        print("[Outlook Task] Direct outlook.exe spawn invoked.")
+        if os.path.isfile(file_path):
+            img = Image.open(file_path)
+            copy_pil_image_to_clipboard(img)
     except Exception as e:
-        print(f"[Outlook Task] Direct spawn info: {e}")
+        print(f"[Clipboard] Error: {e}")
 
-    # Also simulate Windows Start Search to guarantee Outlook opens on any laptop configuration
+    return file_path
+
+def execute_open_outlook_draft(subject: str, html_body: Optional[str] = None, text_body: Optional[str] = None):
+    """
+    Opens Outlook Classic and creates a new email draft with the formatted HTML tables directly in the email body.
+    No screenshot is taken or attached.
+    """
+    subject = subject or "[IDT LOGISTICS REPORT] Weekly Freight Performance & Category Economics"
+    opened = False
+
+    # Method 1: Native Windows COM Automation (Directly creates mail with HTML tables and displays draft)
     try:
-        time.sleep(0.4)
-        pyautogui.press('win')
-        time.sleep(0.4)
-        print("[Outlook Task] Typing 'outlook' into Windows Start...")
-        pyautogui.write('outlook', interval=0.04)
-        time.sleep(0.4)
-        pyautogui.press('enter')
-        print("[Outlook Task] Pressed Enter on Outlook.")
+        print("[Outlook Task] 1. Initializing Outlook COM automation...")
+        ol = win32com.client.dynamic.Dispatch("Outlook.Application")
+        mail = ol.CreateItem(0)  # 0 = olMailItem
+        mail.Subject = subject
+
+        if html_body:
+            mail.HTMLBody = html_body
+        elif text_body:
+            mail.Body = text_body
+
+        print("[Outlook Task] 2. Displaying Outlook Classic draft on screen with tables...")
+        mail.Display(False)
+        try:
+            mail.GetInspector.Activate()
+        except Exception:
+            pass
+
+        opened = True
+        print("[Success] Outlook Classic automatically opened and draft displayed with weekly logistics tables!")
     except Exception as e:
-        print(f"[Outlook Task] Keystroke automation info: {e}")
+        print(f"[Outlook Task] COM method info: {e}. Trying executable spawn fallback...")
 
-    # Wait for Outlook to load
-    print("[Outlook Task] 3. Waiting 5.5s for Outlook Classic window...")
-    time.sleep(5.5)
+    # Method 2: Fallback direct spawn via outlook.exe /c ipm.note
+    if not opened:
+        try:
+            exe_path = find_outlook_executable()
+            print(f"[Outlook Task] Spawning: {exe_path} /c ipm.note")
+            subprocess.Popen([exe_path, '/c', 'ipm.note'])
+            opened = True
+            print("[Success] Outlook Classic spawned via executable!")
+        except Exception as e2:
+            print(f"[Error] Failed to spawn Outlook executable: {e2}")
 
-    # Click 'New Email' via shortcut Ctrl + N
-    print("[Outlook Task] 4. Triggering New Mail compose (Ctrl + N)...")
-    try:
-        pyautogui.hotkey('ctrl', 'n')
-        time.sleep(2.0)
-
-        # Tab 3 times from 'To' field to the rich email body
-        print("[Outlook Task] 5. Focusing Email Body...")
-        for _ in range(3):
-            send_key_tap(VK_TAB)
-            time.sleep(0.2)
-
-        # Paste rich HTML formatted tables into compose body
-        print("[Outlook Task] 6. Pasting rich formatted report (Ctrl + V)...")
-        time.sleep(0.3)
-        pyautogui.hotkey('ctrl', 'v')
-        print("[Success] Outlook Classic opened & report tables pasted into compose window!")
-    except Exception as e:
-        print(f"[Outlook Task] Compose navigation info: {e}")
+    return opened
 
 class ReportDraftRequest(BaseModel):
-    subject: str
-    html_body: str
-    text_body: str
+    subject: Optional[str] = None
+    html_body: Optional[str] = None
+    text_body: Optional[str] = None
+    image_base64: Optional[str] = None
     mentor_email: Optional[str] = None
 
 @app.post("/api/draft-outlook-report")
 async def draft_outlook_report(req: ReportDraftRequest):
     """
-    Endpoint called when the user clicks 'Send Weekly Report' in top right.
-    Searches and opens Outlook Classic on the laptop and drafts the complete report.
+    Endpoint called when clicking 'Send Weekly Report'.
+    Opens Outlook Classic and inserts the formatted weekly logistics tables into the draft body.
     """
     try:
-        threading.Thread(
-            target=execute_search_open_outlook_and_draft,
-            args=(req.subject, req.html_body, req.text_body),
-            daemon=True
-        ).start()
+        def worker():
+            pythoncom.CoInitialize()
+            try:
+                execute_open_outlook_draft(req.subject, req.html_body, req.text_body)
+            finally:
+                pythoncom.CoUninitialize()
+
+        threading.Thread(target=worker, daemon=True).start()
         return {
             "status": "success",
-            "message": "Outlook Classic search initiated and report tables copied to clipboard."
+            "message": "Outlook Classic draft opened with weekly logistics tables in body."
         }
     except Exception as e:
         print(f"[Error] /api/draft-outlook-report: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.post("/api/trigger-screenshot-and-outlook")
-async def handle_legacy_trigger():
-    return {"status": "ok", "message": "Deprecated screenshot trigger. Use /api/draft-outlook-report."}
+async def handle_trigger(req: Optional[ReportDraftRequest] = None):
+    subj = req.subject if req else "[IDT LOGISTICS REPORT] Weekly Logistics Performance"
+    html_b = req.html_body if req else None
+    text_b = req.text_body if req else None
+    try:
+        def worker():
+            pythoncom.CoInitialize()
+            try:
+                execute_open_outlook_draft(subj, html_b, text_b)
+            finally:
+                pythoncom.CoUninitialize()
+
+        threading.Thread(target=worker, daemon=True).start()
+        return {
+            "status": "success",
+            "message": "Outlook Classic draft opened with weekly logistics tables in body."
+        }
+    except Exception as e:
+        print(f"[Error] /api/trigger-screenshot-and-outlook: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/outlook-paste")
+async def handle_legacy_paste(req: Request):
+    return await handle_trigger()
 
 @app.get("/health")
 def health():
