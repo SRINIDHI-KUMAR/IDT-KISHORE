@@ -786,7 +786,7 @@ export default function App() {
       setIsGeneratingReport(true);
       setReportToast({ type: 'info', msg: '📨 Generating weekly logistics report & launching Outlook Classic...' });
 
-      // 1. Calculate and build full analyst report dataset with 6 tables (including all weeks in Table 2)
+      // 1. Calculate and build full analyst report dataset with 7 tables (including all weeks in Table 3)
       const reportData = buildWeeklyReportData({
         mainRows,
         copackRows,

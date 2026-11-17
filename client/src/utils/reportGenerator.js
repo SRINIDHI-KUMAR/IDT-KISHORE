@@ -114,7 +114,10 @@ export function buildWeeklyReportData({
     if (r.lr) d.tripsSet.add(r.lr);
     else d.tripsSet.add(Math.random());
 
-    const rawTo = (r.toDepot || '').trim();
+    let rawTo = (r.toDepot || '').trim();
+    if (!rawTo && r.route && r.route.includes('→')) {
+      rawTo = r.route.split('→')[1]?.trim() || '';
+    }
     if (rawTo) {
       const toD = rawTo.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
       d.destinations.set(toD, (d.destinations.get(toD) || 0) + cost);
@@ -284,7 +287,7 @@ export function buildWeeklyReportData({
   const planningSummary = [
     {
       status: 'Planned',
-      label: 'Planned (HYB - VIJ, BLR - HUBLI, COIM - COCHIN)',
+      label: 'Planned (hyb - vij, blr to hubli, coim to cochin)',
       costLacs: (planCost / 100000).toFixed(2) + ' L',
       sharePct: totalCost > 0 ? ((planCost / totalCost) * 100).toFixed(1) + '%' : '0.0%',
       volumeCSE: planRows.reduce((a, r) => a + (r.cse || 0), 0),
@@ -293,7 +296,7 @@ export function buildWeeklyReportData({
     },
     {
       status: 'Unplanned',
-      label: 'Unplanned Transfers',
+      label: 'Unplanned',
       costLacs: (unplanCost / 100000).toFixed(2) + ' L',
       sharePct: totalCost > 0 ? ((unplanCost / totalCost) * 100).toFixed(1) + '%' : '0.0%',
       volumeCSE: unplanRows.reduce((a, r) => a + (r.cse || 0), 0),
@@ -619,12 +622,12 @@ export function buildRichHtmlEmail(data) {
             <thead>
               <tr>
                 <th width="18%" style="${thNavy}">ORIGIN DEPOT</th>
+                <th width="15%" style="${thNavyRight}">STOCK MOVED (CSE)</th>
                 <th width="14%" style="${thNavyRight}">FREIGHT COST</th>
                 <th width="11%" style="${thNavyRight}">SPEND SHARE</th>
-                <th width="14%" style="${thNavyRight}">STOCK MOVED (CSE)</th>
-                <th width="13%" style="${thNavyRight}">WEIGHT (MT)</th>
-                <th width="9%" style="${thNavyRight}">TRIPS</th>
-                <th width="21%" style="${thNavy}">MAJOR 2 TRANSFERS (TO DEPOT)</th>
+                <th width="12%" style="${thNavyRight}">WEIGHT (MT)</th>
+                <th width="8%" style="${thNavyRight}">TRIPS</th>
+                <th width="22%" style="${thNavy}">MAJOR 2 DEPOT TRANSFERS</th>
               </tr>
             </thead>
             <tbody>
@@ -632,9 +635,9 @@ export function buildRichHtmlEmail(data) {
                 const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
                 return `<tr>
                   <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${d.depot}</td>
+                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(d.cse)}</td>
                   <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right; font-variant-numeric: tabular-nums;">${d.costLacs}</td>
                   <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.sharePct}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${inIN(d.cse)}</td>
                   <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.weightMT}</td>
                   <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${d.trips}</td>
                   <td style="${tdBase} font-size: 10.5px; color: #475569; background-color: ${bg};">${d.majorTransfers}</td>
@@ -642,9 +645,9 @@ export function buildRichHtmlEmail(data) {
               }).join('')}
               <tr style="background-color: #F1F5F9; font-weight: 800;">
                 <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9;">Total Depot Outflow</td>
+                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${inIN(meta.totalCSE)}</td>
                 <td style="${tdBase} font-weight: 900; color: #0D3B66; background-color: #F1F5F9; text-align: right;">${meta.totalCostLacs}</td>
                 <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">100.0%</td>
-                <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${inIN(meta.totalCSE)}</td>
                 <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${meta.totalWeightMT}</td>
                 <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9; text-align: right;">${meta.totalTrips}</td>
                 <td style="${tdBase} font-weight: 800; color: #0F172A; background-color: #F1F5F9;">—</td>
@@ -983,13 +986,13 @@ export function buildPlainTextEmail(data) {
   txt += bar;
   txt += `1. DEPOT-WISE FREIGHT OUTFLOW\n`;
   txt += bar;
-  txt += `Origin Depot    | Freight Cost | Share % | Stock Moved (CSE) | Weight (MT) | Trips | Major 2 Transfers\n`;
+  txt += `Origin Depot    | Stock Moved (CSE) | Freight Cost | Share % | Weight (MT) | Trips | Major 2 Transfers\n`;
   txt += subBar;
   depotTable.forEach(d => {
-    txt += `${d.depot.padEnd(15)} | ${d.costLacs.padStart(12)} | ${d.sharePct.padStart(7)} | ${inIN(d.cse).padStart(17)} | ${d.weightMT.padStart(11)} | ${String(d.trips).padStart(5)} | ${d.majorTransfers}\n`;
+    txt += `${d.depot.padEnd(15)} | ${inIN(d.cse).padStart(17)} | ${d.costLacs.padStart(12)} | ${d.sharePct.padStart(7)} | ${d.weightMT.padStart(11)} | ${String(d.trips).padStart(5)} | ${d.majorTransfers}\n`;
   });
   txt += subBar;
-  txt += `TOTAL OUTFLOW   | ${meta.totalCostLacs.padStart(12)} |  100.0% | ${inIN(meta.totalCSE).padStart(17)} | ${meta.totalWeightMT.padStart(11)} | ${String(meta.totalTrips).padStart(5)} |\n\n`;
+  txt += `TOTAL OUTFLOW   | ${inIN(meta.totalCSE).padStart(17)} | ${meta.totalCostLacs.padStart(12)} |  100.0% | ${meta.totalWeightMT.padStart(11)} | ${String(meta.totalTrips).padStart(5)} |\n\n`;
 
   // 2. Category Wise
   txt += bar;
@@ -1115,20 +1118,20 @@ export async function exportWeeklyReportToExcel(reportData) {
   // --------------------------------------------------------------------------
   const sheet1Data = (depotTable || []).map(d => ({
     'Origin Depot': d.depot,
+    'Stock Moved (CSE)': d.cse,
     'Freight Cost (Rs)': Math.round(d.cost || 0),
     'Freight Cost (Lacs)': d.costLacs,
     'Spend Share': d.sharePct,
-    'Stock Moved (CSE)': d.cse,
     'Weight (MT)': d.weightMT,
     'Trips': d.trips,
     'Major 2 Transfers (To Depot)': d.majorTransfers
   }));
   sheet1Data.push({
     'Origin Depot': 'Total Depot Outflow',
+    'Stock Moved (CSE)': meta?.totalCSE || 0,
     'Freight Cost (Rs)': Math.round(meta?.totalCost || 0),
     'Freight Cost (Lacs)': meta?.totalCostLacs || '',
     'Spend Share': '100.0%',
-    'Stock Moved (CSE)': meta?.totalCSE || 0,
     'Weight (MT)': meta?.totalWeightMT || '',
     'Trips': meta?.totalTrips || 0,
     'Major 2 Transfers (To Depot)': '—'

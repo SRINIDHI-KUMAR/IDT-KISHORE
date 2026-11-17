@@ -100,7 +100,7 @@ export default function WeeklyReportModal({
               type="button" 
               className="report-btn secondary-btn"
               onClick={handleDownloadExcel}
-              title="Download all 6 report tables as separate sheets in Excel (.xlsx)"
+              title="Download all 7 report tables as separate sheets in Excel (.xlsx)"
               style={{
                 borderColor: downloadSuccess ? '#059669' : '#10B981',
                 color: downloadSuccess ? '#065F46' : '#047857',
