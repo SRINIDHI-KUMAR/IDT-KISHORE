@@ -4,7 +4,7 @@
  * 1. Depot-Wise Freight Outflow (Stock Moved & Major Transfers)
  * 2. Category-Wise Freight Cost
  * 3. Week-Wise Sourcing (Dedicated vs Market Hire)
- * 4. Planned vs Unplanned Transfers (with core routes in brackets)
+ * 4. Planned vs Unplanned Transfers (with core routes in brackets: HYB-VIJ, BLR-HUB, COIM-COCH)
  * 5. Top 6 Unplanned Corridors & Category-Wise Breakdown
  * 6. Brand & Category Freight Cost (Pivot Matrix from attached data)
  * 7. Co-Pack Volume & Savings Analysis
@@ -287,7 +287,7 @@ export function buildWeeklyReportData({
   const planningSummary = [
     {
       status: 'Planned',
-      label: 'Planned (hyb - vij, blr to hubli, coim to cochin)',
+      label: 'Planned (HYB-VIJ, BLR-HUB, COIM-COCH)',
       costLacs: (planCost / 100000).toFixed(2) + ' L',
       sharePct: totalCost > 0 ? ((planCost / totalCost) * 100).toFixed(1) + '%' : '0.0%',
       volumeCSE: planRows.reduce((a, r) => a + (r.cse || 0), 0),
