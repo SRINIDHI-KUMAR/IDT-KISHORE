@@ -403,28 +403,40 @@ export function buildWeeklyReportData({
   // TABLE 6: Brand & Category Freight Cost (Attached Pivot Data)
   // -------------------------------------------------------------
   const totalBrandCost = ATTACHED_IMAGE_BRAND_DATA.reduce((a, b) => a + b.cost, 0); // 3939936
-  const brandTable = ATTACHED_IMAGE_BRAND_DATA.map(item => ({
-    brand: item.brand,
-    category: item.category,
-    cost: item.cost,
-    costFormatted: inIN(item.cost),
-    costLacs: (item.cost / 100000).toFixed(2) + ' L',
-    sharePct: ((item.cost / totalBrandCost) * 100).toFixed(1) + '%'
-  }));
+  const pivotCategories = [
+    'Biscuits',
+    'Chocolate',
+    'Cocoa Beverage',
+    'Gifting',
+    'Gums & Candy',
+    'Lotus',
+    'Tang'
+  ];
 
-  const brandCatMap = new Map();
+  const brandPivotMap = new Map();
   ATTACHED_IMAGE_BRAND_DATA.forEach(item => {
-    brandCatMap.set(item.category, (brandCatMap.get(item.category) || 0) + item.cost);
+    if (!brandPivotMap.has(item.brand)) {
+      const initVals = {};
+      pivotCategories.forEach(cat => { initVals[cat] = 0; });
+      brandPivotMap.set(item.brand, {
+        brand: item.brand,
+        values: initVals,
+        total: 0
+      });
+    }
+    const bRow = brandPivotMap.get(item.brand);
+    bRow.values[item.category] = (bRow.values[item.category] || 0) + item.cost;
+    bRow.total += item.cost;
   });
-  const brandCategoryTotals = Array.from(brandCatMap.entries())
-    .map(([cat, cost]) => ({
-      category: cat,
-      cost,
-      costFormatted: inIN(cost),
-      costLacs: (cost / 100000).toFixed(2) + ' L',
-      sharePct: ((cost / totalBrandCost) * 100).toFixed(1) + '%'
-    }))
-    .sort((a, b) => b.cost - a.cost);
+
+  const brandPivotRows = Array.from(brandPivotMap.values())
+    .sort((a, b) => a.brand.localeCompare(b.brand));
+
+  const pivotCategoryTotals = {};
+  pivotCategories.forEach(cat => {
+    pivotCategoryTotals[cat] = brandPivotRows.reduce((sum, r) => sum + (r.values[cat] || 0), 0);
+  });
+  const pivotGrandTotal = brandPivotRows.reduce((sum, r) => sum + r.total, 0);
 
   // -------------------------------------------------------------
   // TABLE 7: Co-Pack Transfer Volume & Freight Savings Analysis
@@ -506,8 +518,10 @@ export function buildWeeklyReportData({
     planningSummary,
     top6RoutesTable,
     catUnplanTable,
-    brandTable,
-    brandCategoryTotals,
+    brandPivotRows,
+    pivotCategories,
+    pivotCategoryTotals,
+    pivotGrandTotal,
     copackTable
   };
 }
@@ -525,8 +539,10 @@ export function buildRichHtmlEmail(data) {
     planningSummary = [],
     top6RoutesTable = [],
     catUnplanTable = [],
-    brandTable = [],
-    brandCategoryTotals = [],
+    brandPivotRows = [],
+    pivotCategories = [],
+    pivotCategoryTotals = {},
+    pivotGrandTotal = 0,
     copackTable = []
   } = data;
 
@@ -840,64 +856,54 @@ export function buildRichHtmlEmail(data) {
 
           ${makeSpacer(22)}
 
-          <!-- 6. BRAND & CATEGORY FREIGHT COST -->
+          <!-- 6. BRAND & CATEGORY FREIGHT COST MATRIX -->
           ${makeHeading('6. BRAND & CATEGORY FREIGHT COST')}
           ${makeSpacer(6)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
-              <tr>
-                <th width="28%" style="${thNavy}">BRAND</th>
-                <th width="22%" style="${thNavy}">CATEGORY</th>
-                <th width="18%" style="${thNavyRight}">FREIGHT COST (₹)</th>
-                <th width="16%" style="${thNavyRight}">SPEND (LACS)</th>
-                <th width="16%" style="${thNavyRight}">SHARE %</th>
+              <tr style="background-color: #D9E1F2;">
+                <th style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: left; padding: 5px 6px; border: 1px solid #B4C6E7;">Sum of FRT Cost per CSE</th>
+                <th colspan="7" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: center; padding: 5px 6px; border: 1px solid #B4C6E7;">Column Labels</th>
+                <th style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">&nbsp;</th>
+              </tr>
+              <tr style="background-color: #D9E1F2;">
+                <th width="19%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: left; padding: 5px 6px; border: 1px solid #B4C6E7;">Row Labels</th>
+                <th width="10%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Biscuits</th>
+                <th width="10.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Chocolate</th>
+                <th width="11%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Cocoa Beverage</th>
+                <th width="9%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Gifting</th>
+                <th width="10.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Gums &amp; Candy</th>
+                <th width="8.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Lotus</th>
+                <th width="8.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Tang</th>
+                <th width="13%" style="${fontStack} font-size: 10px; font-weight: 800; color: #0D3B66; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7; background-color: #C6D9F1;">Grand Total</th>
               </tr>
             </thead>
             <tbody>
-              ${brandTable.map((b, i) => {
+              ${brandPivotRows.map((r, i) => {
                 const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
                 return `<tr>
-                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${b.brand}</td>
-                  <td style="${tdBase} color: #334155; background-color: ${bg}; font-weight: 600;">${b.category}</td>
-                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right; font-variant-numeric: tabular-nums;">${b.costFormatted}</td>
-                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right;">${b.costLacs}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${b.sharePct}</td>
+                  <td style="${tdBase} font-size: 10.5px; font-weight: 700; color: #0F172A; background-color: ${bg}; padding: 4px 6px;">${r.brand}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Biscuits'] ? r.values['Biscuits'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Chocolate'] ? r.values['Chocolate'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Cocoa Beverage'] ? r.values['Cocoa Beverage'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Gifting'] ? r.values['Gifting'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Gums & Candy'] ? r.values['Gums & Candy'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Lotus'] ? r.values['Lotus'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Tang'] ? r.values['Tang'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 10.5px; font-weight: 700; text-align: right; color: #0D3B66; background-color: ${i % 2 === 1 ? '#F1F5F9' : '#F8FAFC'}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.total.toLocaleString('en-IN')}</td>
                 </tr>`;
               }).join('')}
-              <tr style="background-color: #F1F5F9; font-weight: 800;">
-                <td colspan="2" style="${tdBase} font-weight: 900; color: #0F172A; background-color: #F1F5F9;">Grand Total (29 Brands)</td>
-                <td style="${tdBase} font-weight: 900; color: #0D3B66; background-color: #F1F5F9; text-align: right;">${inIN(meta.totalBrandCost || 3939936)}</td>
-                <td style="${tdBase} font-weight: 900; color: #0D3B66; background-color: #F1F5F9; text-align: right;">${meta.totalBrandCostLacs || '39.40 L'}</td>
-                <td style="${tdBase} font-weight: 900; color: #0F172A; background-color: #F1F5F9; text-align: right;">100.0%</td>
+              <tr style="background-color: #D9E1F2; font-weight: 800; border-top: 2px solid #8EA9DB;">
+                <td style="${tdBase} font-size: 11px; font-weight: 900; color: #0F172A; background-color: #D9E1F2; padding: 6px 6px;">Grand Total</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Biscuits'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Chocolate'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Cocoa Beverage'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Gifting'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Gums & Candy'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Lotus'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Tang'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 11px; font-weight: 900; text-align: right; color: #0D3B66; background-color: #C6D9F1; padding: 6px 6px;">${(pivotGrandTotal || 0).toLocaleString('en-IN')}</td>
               </tr>
-            </tbody>
-          </table>
-
-          ${makeSpacer(10)}
-
-          <!-- Category Summary from Pivot Table -->
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
-            <thead>
-              <tr>
-                <th colspan="4" style="${thNavy} background-color: #1E293B;">CATEGORY TOTALS SUMMARY</th>
-              </tr>
-              <tr>
-                <th width="35%" style="${thNavy} font-size: 9.5px;">CATEGORY</th>
-                <th width="25%" style="${thNavyRight} font-size: 9.5px;">SUM OF FRT COST (₹)</th>
-                <th width="20%" style="${thNavyRight} font-size: 9.5px;">COST (LACS)</th>
-                <th width="20%" style="${thNavyRight} font-size: 9.5px;">CATEGORY SHARE</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${brandCategoryTotals.map((c, i) => {
-                const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
-                return `<tr>
-                  <td style="${tdBase} font-weight: 700; color: #0F172A; background-color: ${bg};">${c.category}</td>
-                  <td style="${tdBase} font-weight: 700; color: #0D3B66; background-color: ${bg}; text-align: right;">${c.costFormatted}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.costLacs}</td>
-                  <td style="${tdBase} color: #1E293B; background-color: ${bg}; text-align: right;">${c.sharePct}</td>
-                </tr>`;
-              }).join('')}
             </tbody>
           </table>
 
@@ -964,8 +970,10 @@ export function buildPlainTextEmail(data) {
     planningSummary = [],
     top6RoutesTable = [],
     catUnplanTable = [],
-    brandTable = [],
-    brandCategoryTotals = [],
+    brandPivotRows = [],
+    pivotCategories = [],
+    pivotCategoryTotals = {},
+    pivotGrandTotal = 0,
     copackTable = []
   } = data;
 
@@ -1045,23 +1053,26 @@ export function buildPlainTextEmail(data) {
   });
   txt += '\n';
 
-  // 6. Brand & Category Cost
+  // 6. Brand & Category Cost (Pivot Matrix)
   txt += bar;
-  txt += `6. BRAND & CATEGORY FREIGHT COST\n`;
+  txt += `6. BRAND & CATEGORY FREIGHT COST (PIVOT MATRIX)\n`;
   txt += bar;
-  txt += `Brand                   | Category         | Freight Cost (Rs) | Spend (Lacs) | Share %\n`;
+  txt += `Sum of FRT Cost per CSE | Column Labels\n`;
+  txt += `Row Labels              |  Biscuits | Chocolate | Cocoa Bev |   Gifting | Gums&Cndy |     Lotus |      Tang | Grand Total\n`;
   txt += subBar;
-  brandTable.forEach(b => {
-    txt += `${b.brand.padEnd(23)} | ${b.category.padEnd(16)} | ${b.costFormatted.padStart(17)} | ${b.costLacs.padStart(12)} | ${b.sharePct.padStart(7)}\n`;
+  brandPivotRows.forEach(r => {
+    const bsc = r.values['Biscuits'] ? String(r.values['Biscuits']) : '';
+    const chc = r.values['Chocolate'] ? String(r.values['Chocolate']) : '';
+    const ccb = r.values['Cocoa Beverage'] ? String(r.values['Cocoa Beverage']) : '';
+    const gft = r.values['Gifting'] ? String(r.values['Gifting']) : '';
+    const gms = r.values['Gums & Candy'] ? String(r.values['Gums & Candy']) : '';
+    const lts = r.values['Lotus'] ? String(r.values['Lotus']) : '';
+    const tng = r.values['Tang'] ? String(r.values['Tang']) : '';
+    const tot = String(r.total);
+    txt += `${r.brand.padEnd(23)} | ${bsc.padStart(9)} | ${chc.padStart(9)} | ${ccb.padStart(9)} | ${gft.padStart(9)} | ${gms.padStart(9)} | ${lts.padStart(9)} | ${tng.padStart(9)} | ${tot.padStart(11)}\n`;
   });
   txt += subBar;
-  txt += `GRAND TOTAL (29 Brands) | All Categories   | ${inIN(meta.totalBrandCost || 3939936).padStart(17)} | ${(meta.totalBrandCostLacs || '39.40 L').padStart(12)} |  100.0%\n\n`;
-
-  txt += `Category Summary:\n`;
-  brandCategoryTotals.forEach(c => {
-    txt += `• ${c.category.padEnd(16)}: ${c.costFormatted.padStart(10)} (${c.costLacs}, ${c.sharePct})\n`;
-  });
-  txt += '\n';
+  txt += `Grand Total             | ${(pivotCategoryTotals['Biscuits'] || 1141432).toString().padStart(9)} | ${(pivotCategoryTotals['Chocolate'] || 2046151).toString().padStart(9)} | ${(pivotCategoryTotals['Cocoa Beverage'] || 158262).toString().padStart(9)} | ${(pivotCategoryTotals['Gifting'] || 180113).toString().padStart(9)} | ${(pivotCategoryTotals['Gums & Candy'] || 307871).toString().padStart(9)} | ${(pivotCategoryTotals['Lotus'] || 10187).toString().padStart(9)} | ${(pivotCategoryTotals['Tang'] || 95920).toString().padStart(9)} | ${(pivotGrandTotal || 3939936).toString().padStart(11)}\n\n`;
 
   // 7. Co-Pack Savings
   txt += bar;
@@ -1094,8 +1105,10 @@ export async function exportWeeklyReportToExcel(reportData) {
     planningSummary = [],
     top6RoutesTable = [],
     catUnplanTable = [],
-    brandTable = [],
-    brandCategoryTotals = [],
+    brandPivotRows = [],
+    pivotCategories = [],
+    pivotCategoryTotals = {},
+    pivotGrandTotal = 0,
     copackTable = []
   } = reportData;
 
@@ -1245,25 +1258,47 @@ export async function exportWeeklyReportToExcel(reportData) {
   XLSX.utils.book_append_sheet(wb, ws5, 'Top 6 Unplanned Corridors');
 
   // --------------------------------------------------------------------------
-  // SHEET 6: Brand & Category Freight Cost (Attached Pivot Data)
+  // SHEET 6: Brand & Category Freight Cost (Pivot Matrix as in attached image)
   // --------------------------------------------------------------------------
-  const sheet6Data = (brandTable || []).map(b => ({
-    'Brand': b.brand,
-    'Category': b.category,
-    'Freight Cost (Rs)': b.cost,
-    'Spend (Lacs)': b.costLacs,
-    'Share %': b.sharePct
-  }));
-  sheet6Data.push({
-    'Brand': 'Grand Total (29 Brands)',
-    'Category': 'All Categories',
-    'Freight Cost (Rs)': meta?.totalBrandCost || 3939936,
-    'Spend (Lacs)': meta?.totalBrandCostLacs || '39.40 L',
-    'Share %': '100.0%'
-  });
-  const ws6 = XLSX.utils.json_to_sheet(sheet6Data);
-  applyColWidths(ws6, sheet6Data);
-  XLSX.utils.book_append_sheet(wb, ws6, 'Brand & Category Cost');
+  const sheet6AOA = [
+    ['Sum of FRT Cost per CSE', 'Column Labels', '', '', '', '', '', '', ''],
+    ['Row Labels', 'Biscuits', 'Chocolate', 'Cocoa Beverage', 'Gifting', 'Gums & Candy', 'Lotus', 'Tang', 'Grand Total'],
+    ...brandPivotRows.map(r => [
+      r.brand,
+      r.values['Biscuits'] || '',
+      r.values['Chocolate'] || '',
+      r.values['Cocoa Beverage'] || '',
+      r.values['Gifting'] || '',
+      r.values['Gums & Candy'] || '',
+      r.values['Lotus'] || '',
+      r.values['Tang'] || '',
+      r.total
+    ]),
+    [
+      'Grand Total',
+      pivotCategoryTotals['Biscuits'] || 1141432,
+      pivotCategoryTotals['Chocolate'] || 2046151,
+      pivotCategoryTotals['Cocoa Beverage'] || 158262,
+      pivotCategoryTotals['Gifting'] || 180113,
+      pivotCategoryTotals['Gums & Candy'] || 307871,
+      pivotCategoryTotals['Lotus'] || 10187,
+      pivotCategoryTotals['Tang'] || 95920,
+      pivotGrandTotal || 3939936
+    ]
+  ];
+  const ws6 = XLSX.utils.aoa_to_sheet(sheet6AOA);
+  ws6['!cols'] = [
+    { wch: 28 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 14 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws6, 'Brand & Category Matrix');
 
   // --------------------------------------------------------------------------
   // SHEET 7: Co-Pack Transfer Volume & Freight Cost Savings Analysis
