@@ -595,13 +595,15 @@ export function buildRichHtmlEmail(data) {
         <td style="padding: 12px 14px; ${fontStack}">
           
           <!-- HEADER BLOCK -->
-          <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 6px; margin-bottom: 10px;">
-            <div style="${fontStack} font-size: 10px; font-weight: 800; color: #0D3B66; letter-spacing: 0.6px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
-            <h1 style="${fontStack} font-size: 15px; font-weight: 800; color: #0F172A; margin: 2px 0 4px 0; line-height: 1.2;">Weekly Logistics Freight Performance &amp; Executive Summary</h1>
+          <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 10px; margin-bottom: 8px;">
+            <div style="${fontStack} font-size: 10.5px; font-weight: 800; color: #0D3B66; letter-spacing: 0.6px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
+            <h1 style="${fontStack} font-size: 15px; font-weight: 800; color: #0F172A; margin: 3px 0 5px 0; line-height: 1.25;">Weekly Logistics Freight Performance &amp; Executive Summary</h1>
             <div style="${fontStack} font-size: 11px; color: #64748B;">
               <strong>Reporting Scope:</strong> ${meta.monthLabel} &bull; ${meta.weekLabel} &nbsp;|&nbsp; <strong>Generated:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
             </div>
           </div>
+
+          ${makeSpacer(14)}
 
           <!-- EXECUTIVE KPI STRIP -->
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 0; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 4px; ${fontStack}">
@@ -1090,12 +1092,13 @@ export function buildPlainTextEmail(data) {
 }
 
 /**
- * Exports exactly the 7 weekly executive report tables into an Excel file (.xlsx)
- * with each table in its own designated, clean worksheet.
+ * Exports all 7 logistics report tables into a single, beautifully formatted Excel worksheet.
+ * Tables are placed one by one below each other with neat mild headers, cell borders,
+ * clear typography, and formatted numbers.
  */
 export async function exportWeeklyReportToExcel(reportData) {
   if (!reportData) return;
-  const XLSX = await import('xlsx');
+  const XLSX = await import('xlsx-js-style');
   const {
     meta,
     depotTable = [],
@@ -1114,216 +1117,383 @@ export async function exportWeeklyReportToExcel(reportData) {
 
   const wb = XLSX.utils.book_new();
 
-  // Helper to calculate column widths dynamically
-  const applyColWidths = (ws, dataRows) => {
-    const colWidths = [];
-    dataRows.forEach(row => {
-      Object.values(row).forEach((val, idx) => {
-        const len = String(val ?? '').length;
-        colWidths[idx] = Math.max(colWidths[idx] || 12, len + 3);
-      });
-    });
-    ws['!cols'] = colWidths.map(w => ({ wch: Math.min(Math.max(w, 12), 48) }));
+  // STYLING PALETTE (Neat, mild colors & soft corporate borders)
+  const borderThin = {
+    top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    right: { style: 'thin', color: { rgb: 'CBD5E1' } }
   };
 
-  // --------------------------------------------------------------------------
-  // SHEET 1: Depot-Wise Freight Outflow
-  // --------------------------------------------------------------------------
-  const sheet1Data = (depotTable || []).map(d => ({
-    'Origin Depot': d.depot,
-    'Stock Moved (CSE)': d.cse,
-    'Freight Cost (Rs)': Math.round(d.cost || 0),
-    'Freight Cost (Lacs)': d.costLacs,
-    'Spend Share': d.sharePct,
-    'Weight (MT)': d.weightMT,
-    'Trips': d.trips,
-    'Major 2 Transfers (To Depot)': d.majorTransfers
-  }));
-  sheet1Data.push({
-    'Origin Depot': 'Total Depot Outflow',
-    'Stock Moved (CSE)': meta?.totalCSE || 0,
-    'Freight Cost (Rs)': Math.round(meta?.totalCost || 0),
-    'Freight Cost (Lacs)': meta?.totalCostLacs || '',
-    'Spend Share': '100.0%',
-    'Weight (MT)': meta?.totalWeightMT || '',
-    'Trips': meta?.totalTrips || 0,
-    'Major 2 Transfers (To Depot)': '—'
-  });
-  const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
-  applyColWidths(ws1, sheet1Data);
-  XLSX.utils.book_append_sheet(wb, ws1, 'Depot Freight Outflow');
+  const borderTotal = {
+    top: { style: 'thin', color: { rgb: '8EA9DB' } },
+    bottom: { style: 'double', color: { rgb: '0D3B66' } },
+    left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+  };
 
-  // --------------------------------------------------------------------------
-  // SHEET 2: Category-Wise Freight Cost Contribution
-  // --------------------------------------------------------------------------
-  const sheet2Data = (categoryTable || []).map(c => ({
-    'Category': c.category,
-    'Freight Cost (Rs)': Math.round(c.cost || 0),
-    'Freight Cost (Lacs)': c.costLacs,
-    'Spend Share': c.sharePct,
-    'Volume (CSE)': c.cse,
-    'Weight (MT)': c.weightMT,
-    'Trips': c.trips,
-    'Rate / MT (Rs)': c.ratePerMT
-  }));
-  sheet2Data.push({
-    'Category': 'Total Paid Operations',
-    'Freight Cost (Rs)': Math.round(meta?.totalCost || 0),
-    'Freight Cost (Lacs)': meta?.totalCostLacs || '',
-    'Spend Share': '100.0%',
-    'Volume (CSE)': meta?.totalCSE || 0,
-    'Weight (MT)': meta?.totalWeightMT || '',
-    'Trips': meta?.totalTrips || 0,
-    'Rate / MT (Rs)': '—'
-  });
-  const ws2 = XLSX.utils.json_to_sheet(sheet2Data);
-  applyColWidths(ws2, sheet2Data);
-  XLSX.utils.book_append_sheet(wb, ws2, 'Category Freight Cost');
+  const titleStyle = {
+    font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: '0D3B66' } },
+    alignment: { vertical: 'center', horizontal: 'left' }
+  };
 
-  // --------------------------------------------------------------------------
-  // SHEET 3: Vehicle Sourcing Model: Dedicated vs Market Hire (Week-Wise Cost)
-  // --------------------------------------------------------------------------
-  const sheet3Data = (weekTable || []).map(w => ({
-    'Timeline': w.week,
-    'Dedicated Spend': w.dedCostLacs,
-    'Market Hire Spend': w.mktCostLacs,
-    'Total Freight': w.totalCostLacs,
-    'Market Hire %': w.mktShare,
-    'Volume (CSE)': w.cse,
-    'Tonnage (MT)': w.weightMT,
-    'Trips': w.trips
-  }));
+  const subTitleStyle = {
+    font: { name: 'Calibri', sz: 9.5, italic: true, color: { rgb: '64748B' } },
+    alignment: { vertical: 'center', horizontal: 'left' }
+  };
+
+  const sectionBannerStyle = {
+    fill: { fgColor: { rgb: 'E8EEF5' } },
+    font: { name: 'Calibri', sz: 10.5, bold: true, color: { rgb: '0D3B66' } },
+    border: borderThin,
+    alignment: { vertical: 'center', horizontal: 'left' }
+  };
+
+  // Mild header style with soft periwinkle-blue fill and dark navy bold text
+  const headerStyle = (align = 'center') => ({
+    fill: { fgColor: { rgb: 'D9E1F2' } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0D3B66' } },
+    border: borderThin,
+    alignment: { vertical: 'center', horizontal: align, wrapText: true }
+  });
+
+  // Data row styling with alternating mild row background
+  const dataStyle = (isEven, align = 'left', isBold = false) => ({
+    fill: { fgColor: { rgb: isEven ? 'F8FAFC' : 'FFFFFF' } },
+    font: { name: 'Calibri', sz: 9.5, bold: isBold, color: { rgb: '1E293B' } },
+    border: borderThin,
+    alignment: { vertical: 'center', horizontal: align }
+  });
+
+  // Grand Total row styling
+  const totalStyle = (align = 'left') => ({
+    fill: { fgColor: { rgb: 'D9E1F2' } },
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0D3B66' } },
+    border: borderTotal,
+    alignment: { vertical: 'center', horizontal: align }
+  });
+
+  const c = (val, style) => ({ v: val ?? '', s: style });
+  const emptyRow = () => [c('', {}), c('', {}), c('', {}), c('', {}), c('', {}), c('', {}), c('', {}), c('', {})];
+
+  const sheetData = [];
+  const merges = [];
+
+  // Helper to add a banner merged across columns
+  const addBanner = (title, cols = 8) => {
+    const rIdx = sheetData.length;
+    const row = [c(title, sectionBannerStyle)];
+    for (let i = 1; i < cols; i++) {
+      row.push(c('', sectionBannerStyle));
+    }
+    sheetData.push(row);
+    merges.push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: cols - 1 } });
+  };
+
+  // 0. SHEET TITLE & METADATA
+  const r0 = sheetData.length;
+  sheetData.push([c('INTER-DEPOT TRANSFER (IDT) LOGISTICS PERFORMANCE REPORT', titleStyle)]);
+  merges.push({ s: { r: r0, c: 0 }, e: { r: r0, c: 8 } });
+
+  const r1 = sheetData.length;
+  sheetData.push([c(`Reporting Scope: ${meta?.monthLabel || 'All'} • ${meta?.weekLabel || 'All Weeks'}   |   Generated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, subTitleStyle)]);
+  merges.push({ s: { r: r1, c: 0 }, e: { r: r1, c: 8 } });
+
+  sheetData.push(emptyRow());
+
+  // 1. DEPOT-WISE FREIGHT OUTFLOW
+  addBanner('1. DEPOT-WISE FREIGHT OUTFLOW', 8);
+  sheetData.push([
+    c('Origin Depot', headerStyle('left')),
+    c('Stock Moved (CSE)', headerStyle('right')),
+    c('Freight Cost (Rs)', headerStyle('right')),
+    c('Freight Cost (Lacs)', headerStyle('right')),
+    c('Spend Share', headerStyle('right')),
+    c('Weight (MT)', headerStyle('right')),
+    c('Trips', headerStyle('right')),
+    c('Major 2 Depot Transfers', headerStyle('left'))
+  ]);
+  (depotTable || []).forEach((d, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(d.depot, dataStyle(even, 'left', true)),
+      c(d.cse, dataStyle(even, 'right')),
+      c(Math.round(d.cost || 0), dataStyle(even, 'right')),
+      c(d.costLacs, dataStyle(even, 'right', true)),
+      c(d.sharePct, dataStyle(even, 'right')),
+      c(d.weightMT, dataStyle(even, 'right')),
+      c(d.trips, dataStyle(even, 'right')),
+      c(d.majorTransfers, dataStyle(even, 'left'))
+    ]);
+  });
+  sheetData.push([
+    c('Total Depot Outflow', totalStyle('left')),
+    c(meta?.totalCSE || 0, totalStyle('right')),
+    c(Math.round(meta?.totalCost || 0), totalStyle('right')),
+    c(meta?.totalCostLacs || '', totalStyle('right')),
+    c('100.0%', totalStyle('right')),
+    c(meta?.totalWeightMT || '', totalStyle('right')),
+    c(meta?.totalTrips || 0, totalStyle('right')),
+    c('—', totalStyle('center'))
+  ]);
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
+
+  // 2. CATEGORY-WISE FREIGHT COST CONTRIBUTION
+  addBanner('2. CATEGORY-WISE FREIGHT COST CONTRIBUTION', 8);
+  sheetData.push([
+    c('Category', headerStyle('left')),
+    c('Freight Cost (Rs)', headerStyle('right')),
+    c('Freight Cost (Lacs)', headerStyle('right')),
+    c('Spend Share', headerStyle('right')),
+    c('Volume (CSE)', headerStyle('right')),
+    c('Weight (MT)', headerStyle('right')),
+    c('Trips', headerStyle('right')),
+    c('Rate / MT (Rs)', headerStyle('right'))
+  ]);
+  (categoryTable || []).forEach((ct, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(ct.category, dataStyle(even, 'left', true)),
+      c(Math.round(ct.cost || 0), dataStyle(even, 'right')),
+      c(ct.costLacs, dataStyle(even, 'right', true)),
+      c(ct.sharePct, dataStyle(even, 'right')),
+      c(ct.cse, dataStyle(even, 'right')),
+      c(ct.weightMT, dataStyle(even, 'right')),
+      c(ct.trips, dataStyle(even, 'right')),
+      c(ct.ratePerMT, dataStyle(even, 'right'))
+    ]);
+  });
+  sheetData.push([
+    c('Total Paid Operations', totalStyle('left')),
+    c(Math.round(meta?.totalCost || 0), totalStyle('right')),
+    c(meta?.totalCostLacs || '', totalStyle('right')),
+    c('100.0%', totalStyle('right')),
+    c(meta?.totalCSE || 0, totalStyle('right')),
+    c(meta?.totalWeightMT || '', totalStyle('right')),
+    c(meta?.totalTrips || 0, totalStyle('right')),
+    c('—', totalStyle('center'))
+  ]);
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
+
+  // 3. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST)
+  addBanner('3. VEHICLE SOURCING MODEL: DEDICATED VS MARKET HIRE (WEEK-WISE COST)', 8);
+  sheetData.push([
+    c('Timeline', headerStyle('left')),
+    c('Dedicated Spend', headerStyle('right')),
+    c('Market Hire Spend', headerStyle('right')),
+    c('Total Freight', headerStyle('right')),
+    c('Market Hire %', headerStyle('right')),
+    c('Volume (CSE)', headerStyle('right')),
+    c('Tonnage (MT)', headerStyle('right')),
+    c('Trips', headerStyle('right'))
+  ]);
+  (weekTable || []).forEach((w, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(w.week, dataStyle(even, 'left', true)),
+      c(w.dedCostLacs, dataStyle(even, 'right')),
+      c(w.mktCostLacs, dataStyle(even, 'right')),
+      c(w.totalCostLacs, dataStyle(even, 'right', true)),
+      c(w.mktShare, dataStyle(even, 'right')),
+      c(w.cse, dataStyle(even, 'right')),
+      c(w.weightMT, dataStyle(even, 'right')),
+      c(w.trips, dataStyle(even, 'right'))
+    ]);
+  });
   const wt = weekTotals || {};
-  sheet3Data.push({
-    'Timeline': 'Full Period Total',
-    'Dedicated Spend': wt.dedCostLacs || meta?.dedCostLacs || '',
-    'Market Hire Spend': wt.mktCostLacs || meta?.mktCostLacs || '',
-    'Total Freight': wt.totalCostLacs || meta?.totalCostLacs || '',
-    'Market Hire %': wt.mktShare || '—',
-    'Volume (CSE)': wt.cse ?? meta?.totalCSE ?? 0,
-    'Tonnage (MT)': wt.weightMT || meta?.totalWeightMT || '',
-    'Trips': wt.trips ?? meta?.totalTrips ?? 0
+  sheetData.push([
+    c('Full Period Total', totalStyle('left')),
+    c(wt.dedCostLacs || meta?.dedCostLacs || '', totalStyle('right')),
+    c(wt.mktCostLacs || meta?.mktCostLacs || '', totalStyle('right')),
+    c(wt.totalCostLacs || meta?.totalCostLacs || '', totalStyle('right')),
+    c(wt.mktShare || '—', totalStyle('right')),
+    c(wt.cse ?? meta?.totalCSE ?? 0, totalStyle('right')),
+    c(wt.weightMT || meta?.totalWeightMT || '', totalStyle('right')),
+    c(wt.trips ?? meta?.totalTrips ?? 0, totalStyle('right'))
+  ]);
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
+
+  // 4. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY
+  addBanner('4. ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY', 6);
+  sheetData.push([
+    c('Planning Status', headerStyle('left')),
+    c('Freight Spend', headerStyle('right')),
+    c('Spend Share', headerStyle('right')),
+    c('Volume (CSE)', headerStyle('right')),
+    c('Weight (MT)', headerStyle('right')),
+    c('Trips', headerStyle('right'))
+  ]);
+  (planningSummary || []).forEach((p, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(p.label || `${p.status} Transfers`, dataStyle(even, 'left', true)),
+      c(p.costLacs, dataStyle(even, 'right', true)),
+      c(p.sharePct, dataStyle(even, 'right')),
+      c(p.volumeCSE, dataStyle(even, 'right')),
+      c(p.weightMT, dataStyle(even, 'right')),
+      c(p.trips, dataStyle(even, 'right'))
+    ]);
   });
-  const ws3 = XLSX.utils.json_to_sheet(sheet3Data);
-  applyColWidths(ws3, sheet3Data);
-  XLSX.utils.book_append_sheet(wb, ws3, 'Dedicated vs Market Hire');
+  sheetData.push([
+    c('Total System IDT', totalStyle('left')),
+    c(meta?.totalCostLacs || '', totalStyle('right')),
+    c('100.0%', totalStyle('right')),
+    c(meta?.totalCSE || 0, totalStyle('right')),
+    c(meta?.totalWeightMT || '', totalStyle('right')),
+    c(meta?.totalTrips || 0, totalStyle('right'))
+  ]);
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
 
-  // --------------------------------------------------------------------------
-  // SHEET 4: Route Planning Status: Planned vs Unplanned Freight Summary
-  // --------------------------------------------------------------------------
-  const sheet4AOA = [
-    ['ROUTE PLANNING STATUS: PLANNED VS UNPLANNED FREIGHT SUMMARY'],
-    ['Planning Status', 'Freight Spend', 'Spend Share', 'Volume (CSE)', 'Weight (MT)', 'Trips'],
-    ...(planningSummary || []).map(p => [
-      p.label || `${p.status} Transfers`,
-      p.costLacs,
-      p.sharePct,
-      p.volumeCSE,
-      p.weightMT,
-      p.trips
-    ])
-  ];
-  const ws4 = XLSX.utils.aoa_to_sheet(sheet4AOA);
-  ws4['!cols'] = [{ wch: 48 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, ws4, 'Planned vs Unplanned');
-
-  // --------------------------------------------------------------------------
-  // SHEET 5: Top 6 Major Unplanned Route Corridors & Unplanned Category Breakdown
-  // --------------------------------------------------------------------------
-  const sheet5AOA = [
-    ['TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS'],
-    ['Rank', 'Unplanned Corridor (From → To)', 'Freight Cost', 'Unplanned Share %', 'Trips', 'Tonnage', 'Primary Categories'],
-    ...(top6RoutesTable || []).map(r => [
-      `#${r.rank}`,
-      r.corridor,
-      r.costLacs,
-      r.sharePct,
-      r.trips,
-      r.weightMT,
-      r.topCategories
-    ]),
-    [],
-    ['UNPLANNED SPEND BREAKDOWN BY CATEGORY:'],
-    ['Category', 'Unplanned Cost', '% of Unplanned Spend', 'Trips', 'Primary Unplanned Corridor'],
-    ...(catUnplanTable || []).map(c => [
-      c.category,
-      c.unplanCostLacs,
-      c.shareOfUnplan,
-      c.trips,
-      c.topCorridor
-    ])
-  ];
-  const ws5 = XLSX.utils.aoa_to_sheet(sheet5AOA);
-  ws5['!cols'] = [{ wch: 10 }, { wch: 32 }, { wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 16 }, { wch: 32 }];
-  XLSX.utils.book_append_sheet(wb, ws5, 'Top 6 Unplanned Corridors');
-
-  // --------------------------------------------------------------------------
-  // SHEET 6: Brand & Category Freight Cost (Pivot Matrix as in attached image)
-  // --------------------------------------------------------------------------
-  const sheet6AOA = [
-    ['Sum of FRT Cost per CSE', 'Column Labels', '', '', '', '', '', '', ''],
-    ['Row Labels', 'Biscuits', 'Chocolate', 'Cocoa Beverage', 'Gifting', 'Gums & Candy', 'Lotus', 'Tang', 'Grand Total'],
-    ...brandPivotRows.map(r => [
-      r.brand,
-      r.values['Biscuits'] || '',
-      r.values['Chocolate'] || '',
-      r.values['Cocoa Beverage'] || '',
-      r.values['Gifting'] || '',
-      r.values['Gums & Candy'] || '',
-      r.values['Lotus'] || '',
-      r.values['Tang'] || '',
-      r.total
-    ]),
-    [
-      'Grand Total',
-      pivotCategoryTotals['Biscuits'] || 1141432,
-      pivotCategoryTotals['Chocolate'] || 2046151,
-      pivotCategoryTotals['Cocoa Beverage'] || 158262,
-      pivotCategoryTotals['Gifting'] || 180113,
-      pivotCategoryTotals['Gums & Candy'] || 307871,
-      pivotCategoryTotals['Lotus'] || 10187,
-      pivotCategoryTotals['Tang'] || 95920,
-      pivotGrandTotal || 3939936
-    ]
-  ];
-  const ws6 = XLSX.utils.aoa_to_sheet(sheet6AOA);
-  ws6['!cols'] = [
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 16 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws6, 'Brand & Category Matrix');
-
-  // --------------------------------------------------------------------------
-  // SHEET 7: Co-Pack Transfer Volume & Freight Cost Savings Analysis
-  // --------------------------------------------------------------------------
-  const sheet7Data = (copackTable || []).map(c => ({
-    'Category': c.category,
-    'Shipped Volume (CSE)': c.cse,
-    'Co-Pack Weight (MT)': c.weightMT,
-    'Trips': c.trips,
-    'Freight Cost Saved': c.savedCostLacs
-  }));
-  sheet7Data.push({
-    'Category': 'Total Co-Pack Value Added',
-    'Shipped Volume (CSE)': meta?.totalCopackCSE || 0,
-    'Co-Pack Weight (MT)': meta?.totalCopackMT || '',
-    'Trips': meta?.totalCopackTrips || 0,
-    'Freight Cost Saved': `${meta?.totalSavingsLacs || '0.00 L'} Saved`
+  // 5. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS
+  addBanner('5. TOP 6 MAJOR UNPLANNED ROUTE CORRIDORS', 7);
+  sheetData.push([
+    c('Rank', headerStyle('center')),
+    c('Unplanned Corridor (From → To)', headerStyle('left')),
+    c('Freight Cost', headerStyle('right')),
+    c('Unplanned Share %', headerStyle('right')),
+    c('Trips', headerStyle('right')),
+    c('Tonnage (MT)', headerStyle('right')),
+    c('Primary Categories', headerStyle('left'))
+  ]);
+  (top6RoutesTable || []).forEach((r, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(`#${r.rank}`, dataStyle(even, 'center', true)),
+      c(r.corridor, dataStyle(even, 'left', true)),
+      c(r.costLacs, dataStyle(even, 'right', true)),
+      c(r.sharePct, dataStyle(even, 'right')),
+      c(r.trips, dataStyle(even, 'right')),
+      c(r.weightMT, dataStyle(even, 'right')),
+      c(r.topCategories, dataStyle(even, 'left'))
+    ]);
   });
-  const ws7 = XLSX.utils.json_to_sheet(sheet7Data);
-  applyColWidths(ws7, sheet7Data);
-  XLSX.utils.book_append_sheet(wb, ws7, 'Co-Pack Savings Analysis');
+  sheetData.push(emptyRow());
 
-  // --------------------------------------------------------------------------
+  addBanner('UNPLANNED SPEND BREAKDOWN BY CATEGORY', 5);
+  sheetData.push([
+    c('Category', headerStyle('left')),
+    c('Unplanned Cost', headerStyle('right')),
+    c('% of Unplanned Spend', headerStyle('right')),
+    c('Trips', headerStyle('right')),
+    c('Primary Unplanned Corridor', headerStyle('left'))
+  ]);
+  (catUnplanTable || []).forEach((cu, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(cu.category, dataStyle(even, 'left', true)),
+      c(cu.unplanCostLacs, dataStyle(even, 'right', true)),
+      c(cu.shareOfUnplan, dataStyle(even, 'right')),
+      c(cu.trips, dataStyle(even, 'right')),
+      c(cu.topCorridor, dataStyle(even, 'left'))
+    ]);
+  });
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
+
+  // 6. BRAND & CATEGORY FREIGHT COST (PIVOT MATRIX)
+  addBanner('6. BRAND & CATEGORY FREIGHT COST (PIVOT MATRIX - RS)', 9);
+  const rPiv1 = sheetData.length;
+  sheetData.push([
+    c('Sum of FRT Cost per CSE', headerStyle('left')),
+    c('Column Labels', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center')),
+    c('', headerStyle('center'))
+  ]);
+  merges.push({ s: { r: rPiv1, c: 1 }, e: { r: rPiv1, c: 8 } });
+
+  sheetData.push([
+    c('Row Labels', headerStyle('left')),
+    c('Biscuits', headerStyle('right')),
+    c('Chocolate', headerStyle('right')),
+    c('Cocoa Beverage', headerStyle('right')),
+    c('Gifting', headerStyle('right')),
+    c('Gums & Candy', headerStyle('right')),
+    c('Lotus', headerStyle('right')),
+    c('Tang', headerStyle('right')),
+    c('Grand Total', headerStyle('right'))
+  ]);
+  (brandPivotRows || []).forEach((r, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(r.brand, dataStyle(even, 'left', true)),
+      c(r.values['Biscuits'] ? Number(r.values['Biscuits']) : '', dataStyle(even, 'right')),
+      c(r.values['Chocolate'] ? Number(r.values['Chocolate']) : '', dataStyle(even, 'right')),
+      c(r.values['Cocoa Beverage'] ? Number(r.values['Cocoa Beverage']) : '', dataStyle(even, 'right')),
+      c(r.values['Gifting'] ? Number(r.values['Gifting']) : '', dataStyle(even, 'right')),
+      c(r.values['Gums & Candy'] ? Number(r.values['Gums & Candy']) : '', dataStyle(even, 'right')),
+      c(r.values['Lotus'] ? Number(r.values['Lotus']) : '', dataStyle(even, 'right')),
+      c(r.values['Tang'] ? Number(r.values['Tang']) : '', dataStyle(even, 'right')),
+      c(Number(r.total || 0), dataStyle(even, 'right', true))
+    ]);
+  });
+  sheetData.push([
+    c('Grand Total', totalStyle('left')),
+    c(Number(pivotCategoryTotals['Biscuits'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Chocolate'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Cocoa Beverage'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Gifting'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Gums & Candy'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Lotus'] || 0), totalStyle('right')),
+    c(Number(pivotCategoryTotals['Tang'] || 0), totalStyle('right')),
+    c(Number(pivotGrandTotal || 0), totalStyle('right'))
+  ]);
+  sheetData.push(emptyRow());
+  sheetData.push(emptyRow());
+
+  // 7. CO-PACK VOLUME & SAVINGS ANALYSIS
+  addBanner('7. CO-PACK VOLUME & FREIGHT COST SAVINGS ANALYSIS', 5);
+  sheetData.push([
+    c('Category', headerStyle('left')),
+    c('Shipped Volume (CSE)', headerStyle('right')),
+    c('Co-Pack Weight (MT)', headerStyle('right')),
+    c('Trips', headerStyle('right')),
+    c('Freight Cost Saved', headerStyle('right'))
+  ]);
+  (copackTable || []).forEach((cp, i) => {
+    const even = i % 2 === 1;
+    sheetData.push([
+      c(cp.category, dataStyle(even, 'left', true)),
+      c(cp.cse, dataStyle(even, 'right')),
+      c(cp.weightMT, dataStyle(even, 'right')),
+      c(cp.trips, dataStyle(even, 'right')),
+      c(cp.savedCostLacs, dataStyle(even, 'right', true))
+    ]);
+  });
+  sheetData.push([
+    c('Total Co-Pack Value Added', totalStyle('left')),
+    c(meta?.totalCopackCSE || 0, totalStyle('right')),
+    c(meta?.totalCopackMT || '', totalStyle('right')),
+    c(meta?.totalCopackTrips || 0, totalStyle('right')),
+    c(`${meta?.totalSavingsLacs || '0.00 L'} Saved`, totalStyle('right'))
+  ]);
+
+  // CREATE WORKSHEET & APPEND TO WORKBOOK
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    { wch: 34 }, // Col A: Depot / Category / Route / Brand
+    { wch: 20 }, // Col B: Stock Moved / Spend / Biscuits
+    { wch: 20 }, // Col C: Freight Cost / Chocolate
+    { wch: 18 }, // Col D: Spend Share / Cocoa
+    { wch: 16 }, // Col E: Weight MT / Gifting
+    { wch: 16 }, // Col F: Trips / Gums & Candy
+    { wch: 14 }, // Col G: Trips / Lotus
+    { wch: 28 }, // Col H: Major Transfers / Tang
+    { wch: 16 }  // Col I: Grand Total
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'IDT Logistics Report');
+
   // Trigger browser download
-  // --------------------------------------------------------------------------
   const safeMonth = (meta?.monthLabel || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_');
   const safeWeek = (meta?.weekLabel || 'All_Weeks').replace(/[^a-zA-Z0-9_-]/g, '_');
   const fileName = `IDT_Logistics_Weekly_Report_${safeMonth}_${safeWeek}.xlsx`;
