@@ -430,7 +430,7 @@ export function buildWeeklyReportData({
   });
 
   const brandPivotRows = Array.from(brandPivotMap.values())
-    .sort((a, b) => a.brand.localeCompare(b.brand));
+    .sort((a, b) => (b.total - a.total) || a.brand.localeCompare(b.brand));
 
   const pivotCategoryTotals = {};
   pivotCategories.forEach(cat => {
