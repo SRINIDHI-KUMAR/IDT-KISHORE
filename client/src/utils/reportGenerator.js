@@ -549,16 +549,16 @@ export function buildRichHtmlEmail(data) {
   const fontStack = `font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;`;
   const tableWrap = `width: 100%; border-collapse: collapse; margin: 0; background-color: #FFFFFF; border: 1px solid #CBD5E1; ${fontStack} mso-table-lspace: 0pt; mso-table-rspace: 0pt;`;
   
-  const thNavy = `background-color: #0D3B66; color: #FFFFFF; ${fontStack} font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border: 1px solid #0D3B66; line-height: 1.3; text-align: left;`;
+  const thNavy = `background-color: #0D3B66; color: #FFFFFF; ${fontStack} font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 5px; border: 1px solid #0D3B66; line-height: 1.15; text-align: left;`;
   const thNavyRight = `${thNavy} text-align: right;`;
   const thNavyCenter = `${thNavy} text-align: center;`;
 
-  const thGreen = `background-color: #047857; color: #FFFFFF; ${fontStack} font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border: 1px solid #047857; line-height: 1.3; text-align: left;`;
+  const thGreen = `background-color: #047857; color: #FFFFFF; ${fontStack} font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 5px; border: 1px solid #047857; line-height: 1.15; text-align: left;`;
   const thGreenRight = `${thGreen} text-align: right;`;
 
-  const tdBase = `${fontStack} font-size: 11px; padding: 5px 8px; border: 1px solid #E2E8F0; vertical-align: middle; line-height: 1.35;`;
+  const tdBase = `${fontStack} font-size: 10px; padding: 2.5px 5px; border: 1px solid #E2E8F0; vertical-align: middle; line-height: 1.15;`;
 
-  const makeSpacer = (height = 20) => `
+  const makeSpacer = (height = 8) => `
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
       <tr>
         <td height="${height}" style="height: ${height}px; font-size: ${height}px; line-height: ${height}px; mso-line-height-rule: exactly; padding: 0; margin: 0; border: none;">&nbsp;</td>
@@ -568,7 +568,7 @@ export function buildRichHtmlEmail(data) {
   const makeHeading = (title, color = '#0D3B66') => `
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
       <tr>
-        <td style="border-left: 3.5px solid ${color}; padding-left: 8px; padding-top: 2px; padding-bottom: 2px; ${fontStack} font-size: 12px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.2;">
+        <td style="border-left: 3px solid ${color}; padding-left: 6px; padding-top: 2px; padding-bottom: 2px; ${fontStack} font-size: 11px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15;">
           ${title}
         </td>
       </tr>
@@ -587,49 +587,49 @@ export function buildRichHtmlEmail(data) {
   </style>
   <![endif]-->
 </head>
-<body style="margin: 0; padding: 16px 0; background-color: #F8FAFC; ${fontStack} color: #0F172A; line-height: 1.4;">
+<body style="margin: 0; padding: 10px 0; background-color: #F8FAFC; ${fontStack} color: #0F172A; line-height: 1.35;">
   <center style="width: 100%; table-layout: fixed; background-color: #F8FAFC;">
-    <!-- OUTLOOK CONTAINER TABLE -->
-    <table role="presentation" width="860" border="0" cellpadding="0" cellspacing="0" align="center" style="width: 860px; max-width: 860px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: left;">
+    <!-- OUTLOOK CONTAINER TABLE (SMALL & COMPACT) -->
+    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" align="center" style="width: 600px; max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: left;">
       <tr>
-        <td style="padding: 22px 24px; ${fontStack}">
+        <td style="padding: 12px 14px; ${fontStack}">
           
           <!-- HEADER BLOCK -->
-          <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 12px; margin-bottom: 18px;">
-            <div style="${fontStack} font-size: 11px; font-weight: 800; color: #0D3B66; letter-spacing: 0.8px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
-            <h1 style="${fontStack} font-size: 20px; font-weight: 800; color: #0F172A; margin: 4px 0 6px 0; line-height: 1.25;">Weekly Logistics Freight Performance &amp; Executive Summary</h1>
-            <div style="${fontStack} font-size: 12px; color: #64748B;">
+          <div style="border-bottom: 2px solid #0D3B66; padding-bottom: 6px; margin-bottom: 10px;">
+            <div style="${fontStack} font-size: 10px; font-weight: 800; color: #0D3B66; letter-spacing: 0.6px; text-transform: uppercase;">Inter-Depot Transfer (IDT) Logistics Review</div>
+            <h1 style="${fontStack} font-size: 15px; font-weight: 800; color: #0F172A; margin: 2px 0 4px 0; line-height: 1.2;">Weekly Logistics Freight Performance &amp; Executive Summary</h1>
+            <div style="${fontStack} font-size: 11px; color: #64748B;">
               <strong>Reporting Scope:</strong> ${meta.monthLabel} &bull; ${meta.weekLabel} &nbsp;|&nbsp; <strong>Generated:</strong> ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
             </div>
           </div>
 
           <!-- EXECUTIVE KPI STRIP -->
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 0; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 6px; ${fontStack}">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 0; background-color: #FAF8F5; border: 1px solid #E2E8F0; border-radius: 4px; ${fontStack}">
             <tr>
-              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
-                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL FREIGHT SPEND</div>
-                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #0D3B66; margin: 2px 0;">${meta.totalCostLacs}</div>
-                <div style="${fontStack} font-size: 10px; color: #64748B;">${inIN(meta.totalCSE)} CSE</div>
+              <td width="25%" align="center" style="padding: 5px 4px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 8.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">TOTAL FREIGHT</div>
+                <div style="${fontStack} font-size: 14px; font-weight: 900; color: #0D3B66; margin: 1px 0;">${meta.totalCostLacs}</div>
+                <div style="${fontStack} font-size: 9px; color: #64748B;">${inIN(meta.totalCSE)} CSE</div>
               </td>
-              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
-                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL TONNAGE &amp; TRIPS</div>
-                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #0F172A; margin: 2px 0;">${meta.totalWeightMT}</div>
-                <div style="${fontStack} font-size: 10px; color: #64748B;">${meta.totalTrips} Total Trips</div>
+              <td width="25%" align="center" style="padding: 5px 4px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 8.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">VOLUME &amp; TRIPS</div>
+                <div style="${fontStack} font-size: 14px; font-weight: 900; color: #0F172A; margin: 1px 0;">${meta.totalWeightMT}</div>
+                <div style="${fontStack} font-size: 9px; color: #64748B;">${meta.totalTrips} Total Trips</div>
               </td>
-              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
-                <div style="${fontStack} font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">DEDICATED VS MARKET</div>
-                <div style="${fontStack} font-size: 15px; font-weight: 900; color: #0F172A; margin: 3px 0 2px 0;">${meta.dedCostLacs} <span style="font-size: 11px; color:#64748B;">/</span> ${meta.mktCostLacs}</div>
-                <div style="${fontStack} font-size: 10px; color: #DC2626; font-weight: 700;">Market Dominant</div>
+              <td width="25%" align="center" style="padding: 5px 4px; text-align: center; border-right: 1px solid #E2E8F0; vertical-align: middle;">
+                <div style="${fontStack} font-size: 8.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">DEDICATED / MARKET</div>
+                <div style="${fontStack} font-size: 12.5px; font-weight: 900; color: #0F172A; margin: 2px 0 1px 0;">${meta.dedCostLacs} <span style="font-size: 9.5px; color:#64748B;">/</span> ${meta.mktCostLacs}</div>
+                <div style="${fontStack} font-size: 9px; color: #DC2626; font-weight: 700;">Market Dominant</div>
               </td>
-              <td width="25%" align="center" style="padding: 10px 8px; text-align: center; background-color: #ECFDF5; vertical-align: middle;">
-                <div style="${fontStack} font-size: 9.5px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">CO-PACK SAVINGS</div>
-                <div style="${fontStack} font-size: 18px; font-weight: 900; color: #047857; margin: 2px 0;">${meta.totalSavingsLacs}</div>
-                <div style="${fontStack} font-size: 10px; color: #059669; font-weight: 700;">${meta.totalCopackMT} Shipped</div>
+              <td width="25%" align="center" style="padding: 5px 4px; text-align: center; background-color: #ECFDF5; vertical-align: middle;">
+                <div style="${fontStack} font-size: 8.5px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.4px;">CO-PACK SAVINGS</div>
+                <div style="${fontStack} font-size: 14px; font-weight: 900; color: #047857; margin: 1px 0;">${meta.totalSavingsLacs}</div>
+                <div style="${fontStack} font-size: 9px; color: #059669; font-weight: 700;">${meta.totalCopackMT} Shipped</div>
               </td>
             </tr>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 1. DEPOT-WISE FREIGHT OUTFLOW -->
           ${makeHeading('1. DEPOT-WISE FREIGHT OUTFLOW')}
@@ -671,11 +671,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 2. CATEGORY-WISE FREIGHT COST -->
           ${makeHeading('2. CATEGORY-WISE FREIGHT COST')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -713,11 +713,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 3. WEEK-WISE SOURCING (DEDICATED VS MARKET) -->
           ${makeHeading('3. WEEK-WISE SOURCING (DEDICATED VS MARKET)')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -755,11 +755,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 4. PLANNED VS UNPLANNED TRANSFERS -->
           ${makeHeading('4. PLANNED VS UNPLANNED TRANSFERS')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -787,11 +787,11 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 5. TOP 6 UNPLANNED ROUTE CORRIDORS -->
           ${makeHeading('5. TOP 6 UNPLANNED ROUTE CORRIDORS')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -820,7 +820,7 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(12)}
+          ${makeSpacer(5)}
 
           <!-- Unplanned Spend Breakdown By Category -->
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; width: 100%; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
@@ -854,64 +854,64 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 6. BRAND & CATEGORY FREIGHT COST MATRIX -->
           ${makeHeading('6. BRAND & CATEGORY FREIGHT COST')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr style="background-color: #D9E1F2;">
-                <th style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: left; padding: 5px 6px; border: 1px solid #B4C6E7;">Sum of FRT Cost per CSE</th>
-                <th colspan="7" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: center; padding: 5px 6px; border: 1px solid #B4C6E7;">Column Labels</th>
-                <th style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">&nbsp;</th>
+                <th style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: left; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Sum of FRT Cost per CSE</th>
+                <th colspan="7" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: center; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Column Labels</th>
+                <th style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">&nbsp;</th>
               </tr>
               <tr style="background-color: #D9E1F2;">
-                <th width="19%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: left; padding: 5px 6px; border: 1px solid #B4C6E7;">Row Labels</th>
-                <th width="10%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Biscuits</th>
-                <th width="10.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Chocolate</th>
-                <th width="11%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Cocoa Beverage</th>
-                <th width="9%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Gifting</th>
-                <th width="10.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Gums &amp; Candy</th>
-                <th width="8.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Lotus</th>
-                <th width="8.5%" style="${fontStack} font-size: 10px; font-weight: 700; color: #1E293B; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7;">Tang</th>
-                <th width="13%" style="${fontStack} font-size: 10px; font-weight: 800; color: #0D3B66; text-align: right; padding: 5px 6px; border: 1px solid #B4C6E7; background-color: #C6D9F1;">Grand Total</th>
+                <th width="19%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: left; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Row Labels</th>
+                <th width="10%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Biscuits</th>
+                <th width="10.5%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Chocolate</th>
+                <th width="11%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Cocoa Beverage</th>
+                <th width="9%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Gifting</th>
+                <th width="10.5%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Gums &amp; Candy</th>
+                <th width="8.5%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Lotus</th>
+                <th width="8.5%" style="${fontStack} font-size: 9.5px; font-weight: 700; color: #1E293B; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7;">Tang</th>
+                <th width="13%" style="${fontStack} font-size: 9.5px; font-weight: 800; color: #0D3B66; text-align: right; padding: 2.5px 4px; border: 1px solid #B4C6E7; background-color: #C6D9F1;">Grand Total</th>
               </tr>
             </thead>
             <tbody>
               ${brandPivotRows.map((r, i) => {
                 const bg = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
                 return `<tr>
-                  <td style="${tdBase} font-size: 10.5px; font-weight: 700; color: #0F172A; background-color: ${bg}; padding: 4px 6px;">${r.brand}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Biscuits'] ? r.values['Biscuits'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Chocolate'] ? r.values['Chocolate'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Cocoa Beverage'] ? r.values['Cocoa Beverage'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Gifting'] ? r.values['Gifting'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Gums & Candy'] ? r.values['Gums & Candy'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Lotus'] ? r.values['Lotus'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.values['Tang'] ? r.values['Tang'].toLocaleString('en-IN') : ''}</td>
-                  <td style="${tdBase} font-size: 10.5px; font-weight: 700; text-align: right; color: #0D3B66; background-color: ${i % 2 === 1 ? '#F1F5F9' : '#F8FAFC'}; padding: 4px 6px; font-variant-numeric: tabular-nums;">${r.total.toLocaleString('en-IN')}</td>
+                  <td style="${tdBase} font-size: 9.5px; font-weight: 700; color: #0F172A; background-color: ${bg}; padding: 2px 4px;">${r.brand}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Biscuits'] ? r.values['Biscuits'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Chocolate'] ? r.values['Chocolate'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Cocoa Beverage'] ? r.values['Cocoa Beverage'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Gifting'] ? r.values['Gifting'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Gums & Candy'] ? r.values['Gums & Candy'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Lotus'] ? r.values['Lotus'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; text-align: right; color: #1E293B; background-color: ${bg}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.values['Tang'] ? r.values['Tang'].toLocaleString('en-IN') : ''}</td>
+                  <td style="${tdBase} font-size: 9.5px; font-weight: 700; text-align: right; color: #0D3B66; background-color: ${i % 2 === 1 ? '#F1F5F9' : '#F8FAFC'}; padding: 2px 4px; font-variant-numeric: tabular-nums;">${r.total.toLocaleString('en-IN')}</td>
                 </tr>`;
               }).join('')}
               <tr style="background-color: #D9E1F2; font-weight: 800; border-top: 2px solid #8EA9DB;">
-                <td style="${tdBase} font-size: 11px; font-weight: 900; color: #0F172A; background-color: #D9E1F2; padding: 6px 6px;">Grand Total</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Biscuits'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Chocolate'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Cocoa Beverage'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Gifting'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Gums & Candy'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Lotus'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 6px 6px;">${(pivotCategoryTotals['Tang'] || 0).toLocaleString('en-IN')}</td>
-                <td style="${tdBase} font-size: 11px; font-weight: 900; text-align: right; color: #0D3B66; background-color: #C6D9F1; padding: 6px 6px;">${(pivotGrandTotal || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 900; color: #0F172A; background-color: #D9E1F2; padding: 3px 4px;">Grand Total</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Biscuits'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Chocolate'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Cocoa Beverage'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Gifting'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Gums & Candy'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Lotus'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 800; text-align: right; color: #0D3B66; background-color: #D9E1F2; padding: 3px 4px;">${(pivotCategoryTotals['Tang'] || 0).toLocaleString('en-IN')}</td>
+                <td style="${tdBase} font-size: 10px; font-weight: 900; text-align: right; color: #0D3B66; background-color: #C6D9F1; padding: 3px 4px;">${(pivotGrandTotal || 0).toLocaleString('en-IN')}</td>
               </tr>
             </tbody>
           </table>
 
-          ${makeSpacer(22)}
+          ${makeSpacer(8)}
 
           <!-- 7. CO-PACK VOLUME & SAVINGS -->
           ${makeHeading('7. CO-PACK VOLUME & SAVINGS', '#047857')}
-          ${makeSpacer(6)}
+          ${makeSpacer(3)}
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="${tableWrap}">
             <thead>
               <tr>
@@ -947,7 +947,7 @@ export function buildRichHtmlEmail(data) {
             </tbody>
           </table>
 
-          ${makeSpacer(16)}
+          ${makeSpacer(6)}
 
         </td>
       </tr>
